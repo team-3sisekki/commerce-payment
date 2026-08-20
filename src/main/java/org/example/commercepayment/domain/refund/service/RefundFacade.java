@@ -2,6 +2,10 @@ package org.example.commercepayment.domain.refund.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.commercepayment.domain.payment.entity.Payment;
+import org.example.commercepayment.domain.payment.port.PaymentGateway;
+import org.example.commercepayment.domain.payment.port.PaymentGatewayResponse;
+import org.example.commercepayment.domain.payment.service.PaymentService;
 import org.example.commercepayment.domain.refund.dto.RefundRequest;
 import org.example.commercepayment.domain.refund.dto.RefundResponse;
 import org.example.commercepayment.domain.refund.entity.Refund;
@@ -13,38 +17,56 @@ import org.springframework.stereotype.Component;
 public class RefundFacade {
 
     private final RefundService refundService;
+    private final PaymentService paymentService;
+    private final PaymentGateway paymentGateway;
 
-    /**
-     * 트랜잭션 바깥에서 전체 환불 흐름(Orchestration) 제어
-     */
     public RefundResponse processRefund(Long memberId, RefundRequest request) {
+        log.info("========== [환불 파사드 진입] ==========");
+        log.info("결제ID={}, 회원ID={}, 취소사유={}", request.paymentId(), memberId, request.cancelReason());
+
+        /*PG 선검증*/
+        // 1. 결제 단건 조회
+        Payment payment = paymentService.findByIdWithOrder(request.paymentId());
         
-        // Step 1: DB 선검증
-        refundService.validateRefundRequest(memberId, request);
-
-        // Step 1: PG사 선검증 (실제 PG사에서 환불 가능한 금액 확인)
-        // TODO: PortOne 등 PG사 조회 API 연동
-
-        // [Step 2 ~ 6] 금액 산정, 포인트 회수 및 DB 갱신
-        Refund savedRefund = refundService.calculateAndSaveRefund(request);
-
-        boolean isPgSuccess = false;
-        try {
-            // Step 7: PG 취소 호출
-            // TODO: 'PG 환불 금액(savedRefund.getPgRefundAmount())'으로 PortOne 결제 취소 API 호출
+        // 2. PG사 결제 내역 조회 및 상태 검증 (단, PG 결제액이 0원인 전액 포인트 결제는 스킵)
+        if (payment.getPgAmount() > 0) {
+            PaymentGatewayResponse pgResponse = paymentGateway.getPayment(payment.getPortonePaymentId());
             
-            // 가상의 통신 성공 처리
-            isPgSuccess = true;
-            log.info("PG사 환불 통신 성공. Refund ID: {}", savedRefund.getId());
-        } catch (Exception e) {
-            log.error("PG사 환불 통신 실패. Refund ID: {}, Reason: {}", savedRefund.getId(), e.getMessage());
-            isPgSuccess = false;
+            // 3. 환불액 정합성 철벽 검증 (DB 잔액 vs PG 잔액)
+            int pgRemainingAmount = pgResponse.totalAmount() - pgResponse.cancelledAmount();
+            log.info("PG 환불 잔액 = {}", pgRemainingAmount);
+            int dbRemainingAmount = payment.getPgAmount() - refundService.getRefundedPgAmount(payment.getId());
+            log.info("DB 환불 잔액 = {}", dbRemainingAmount);
+            
+            if (pgRemainingAmount != dbRemainingAmount) {
+                throw new IllegalStateException("DB와 PG사의 결제 잔액이 일치하지 않습니다. 관리자 확인이 필요합니다.");
+            }
         }
 
-        // Step 8: 결과 갱신
-        refundService.updateRefundResult(savedRefund.getId(), isPgSuccess);
+        /*선검증 및 DB 갱신*/
+        Refund savedRefund = refundService.calculateAndSaveRefund(memberId, request);
 
-        // 변경된 상태(DB 갱신 결과)를 가져오기 위해 응답 객체 생성
+        /*PG 결제 취소 호출*/
+        boolean isPgSuccess = false;
+        if (savedRefund.getPgRefundAmount() == 0) {
+            log.info("PG 환불 금액이 0원이므로 PG사 통신을 스킵합니다. Refund ID: {}", savedRefund.getId());
+            isPgSuccess = true;
+        } else {
+            try {
+                paymentGateway.cancelPayment(
+                    payment.getPortonePaymentId(), 
+                    request.cancelReason(), 
+                    savedRefund.getPgRefundAmount()
+                );
+                isPgSuccess = true;
+                log.info("PG사 환불 통신 성공. Refund ID: {}", savedRefund.getId());
+            } catch (Exception e) {
+                log.error("PG사 환불 통신 실패. Refund ID: {}, Reason: {}", savedRefund.getId(), e.getMessage());
+            }
+        }
+
+        // 6. 결과 갱신
+        refundService.updateRefundResult(savedRefund.getId(), isPgSuccess);
         return RefundResponse.from(savedRefund);
     }
 }

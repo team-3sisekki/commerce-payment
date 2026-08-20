@@ -64,7 +64,7 @@ public class PaymentFacade {
             log.error("결제 승인 실패 — 금액 불일치: paymentId={}, DB pgAmount={}, PG금액={}",
                     payment.getId(), payment.getPgAmount(), pgPayment.totalAmount());
             try {
-                paymentGateway.cancelPayment(portonePaymentId, "결제 금액 불일치 자동 취소");
+                paymentGateway.cancelPayment(portonePaymentId, "결제 금액 불일치 자동 취소", null);
             } catch (Exception e) {
                 log.error("PG 자동 취소 실패 : 수동 처리 필요: portonePaymentId={}", portonePaymentId, e);
             }

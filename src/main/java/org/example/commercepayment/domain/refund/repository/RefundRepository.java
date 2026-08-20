@@ -26,13 +26,13 @@ public interface RefundRepository extends JpaRepository<Refund, Long> {
      */
     @Query("SELECT COALESCE(SUM(r.pgRefundAmount), 0) " +
             "FROM Refund r " +
-            "WHERE r.paymentId = :paymentId " +
+            "WHERE r.payment.id = :paymentId " +
             "AND r.status = 'COMPLETED'")
     int sumRefundedPgAmountByPaymentId(@Param("paymentId") Long paymentId);
     
     /**
      * 특정 결제 건에 대해 이미 완료된 총 포인트 환불 금액
      */
-    @Query("SELECT COALESCE(SUM(r.pointRefundAmount), 0) FROM Refund r WHERE r.paymentId = :paymentId AND r.status = 'COMPLETED'")
+    @Query("SELECT COALESCE(SUM(r.pointRefundAmount), 0) FROM Refund r WHERE r.payment.id = :paymentId AND r.status = 'COMPLETED'")
     int sumRefundedPointAmountByPaymentId(@Param("paymentId") Long paymentId);
 }
