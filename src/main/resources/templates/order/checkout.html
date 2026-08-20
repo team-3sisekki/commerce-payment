@@ -1,228 +1,275 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{layout/default :: head('주문서')}" />
-</head>
-<body class="font-sans bg-white text-sf-black min-h-screen flex flex-col">
-    <th:block th:replace="~{layout/default :: header}" />
-
-    <main class="flex-1">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-
-            <h1 class="text-5xl font-light text-gray-900 mb-12 tracking-widest uppercase letter-spacing-2">주문서</h1>
-
-            <div id="checkout-loading" class="text-center py-24">
-                <div class="spinner-dark mx-auto"></div>
-            </div>
-
-            <div id="checkout-content" class="hidden animate-fade-in">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div class="lg:col-span-2">
-                        <div class="mb-16">
-                            <h2 class="text-xs font-semibold text-gray-900 mb-8 uppercase tracking-widest">주문 상품</h2>
-                            <div id="checkout-items" class="border-b border-gray-200 pb-8"></div>
-                        </div>
-
-                        <div class="mb-16">
-                            <h2 class="text-xs font-semibold text-gray-900 mb-8 uppercase tracking-widest">배송 정보</h2>
-                            <div class="border border-gray-200 p-6">
-                                <p class="text-sm text-gray-600 mb-2">일반 배송</p>
-                                <p class="text-xs text-gray-500 font-medium">예상 배송일: 영업일 기준 5~7일</p>
-                                <p class="text-xs text-gray-500 font-medium mt-1">전 주문 무료배송</p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h2 class="text-xs font-semibold text-gray-900 mb-8 uppercase tracking-widest">결제 수단</h2>
-                            <div class="border border-gray-200 p-6 flex items-center gap-4">
-                                <i class="ri-bank-card-line text-2xl text-gray-400"></i>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">신용카드 / 체크카드</p>
-                                    <p class="text-xs text-gray-500 mt-1">PortOne 안전결제</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="lg:col-span-1">
-                        <div class="sticky top-32">
-                            <div class="bg-white border border-gray-200 p-8">
-                                <h2 class="text-xs font-semibold text-gray-900 mb-8 uppercase tracking-widest">결제 금액</h2>
-
-                                <div class="space-y-4 mb-8 pb-8 border-b border-gray-200">
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">상품금액</span>
-                                        <span id="checkout-subtotal" class="text-gray-900">0</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">배송비</span>
-                                        <span class="text-gray-900">무료</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">부가세</span>
-                                        <span class="text-gray-900">포함</span>
-                                    </div>
-                                </div>
-
-                                <div class="flex justify-between mb-8">
-                                    <span class="text-sm font-medium text-gray-900 uppercase tracking-wide">합계</span>
-                                    <span class="text-xl font-light text-gray-900">
-                                        <span id="checkout-total">0</span>
-                                    </span>
-                                </div>
-
-                                <button onclick="startPayment()" id="btn-pay"
-                                        class="w-full bg-black hover:bg-gray-900 text-white font-light py-4 text-sm mb-4 transition-all duration-300 uppercase tracking-widest letter-spacing-1">
-                                    결제하기
-                                </button>
-                                <a href="/cart" class="block text-center text-xs text-gray-500 hover:text-gray-900 transition-colors py-3 uppercase tracking-wider font-medium">
-                                    장바구니로 돌아가기
-                                </a>
-
-                                <div class="text-center mt-8 pt-6 border-t border-gray-200">
-                                    <p class="text-xs text-gray-500 flex items-center justify-center gap-2">
-                                        <i class="ri-shield-check-line text-sm"></i> 안전결제
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <th:block th:replace="~{layout/default :: footer}" />
-    <th:block th:replace="~{layout/default :: scripts}" />
-
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
-    <script>
-        let checkoutData = null;
-        let portoneConfig = null;
+</head>
+<body class="bg-gray-50">
 
-        function getCartItemIds() {
-            const params = new URLSearchParams(window.location.search);
-            return params.getAll('cartItemIds').map(Number).filter(n => !isNaN(n));
+<th:block th:replace="~{layout/default :: header}" />
+
+<main class="max-w-3xl mx-auto px-4 py-10">
+    <h1 class="text-2xl font-bold mb-6">주문서</h1>
+
+    <div id="loading" class="py-20 text-center text-gray-500">불러오는 중...</div>
+
+    <div id="content" class="hidden space-y-6">
+
+        <!-- 주문 상품 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="font-semibold mb-4">주문 상품</h2>
+            <table class="w-full text-sm">
+                <thead class="text-gray-500 border-b">
+                <tr>
+                    <th class="text-left py-2">상품</th>
+                    <th class="text-right py-2">가격</th>
+                    <th class="text-right py-2">수량</th>
+                    <th class="text-right py-2">소계</th>
+                </tr>
+                </thead>
+                <tbody id="items"></tbody>
+            </table>
+        </section>
+
+        <!-- 결제 금액 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <h2 class="font-semibold">결제 금액</h2>
+
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600">주문 총액</span>
+                <span id="total-price" class="font-medium"></span>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 text-sm">
+                <span class="text-gray-600">
+                    포인트 사용
+                    <em class="not-italic text-gray-400">(보유 <span id="available-point"></span>P)</em>
+                </span>
+                <span class="flex items-center gap-2">
+                    <input id="use-point" type="number" min="0" step="1" value="0"
+                           class="w-32 border border-gray-300 rounded px-3 py-1.5 text-right"
+                           oninput="recalc()">
+                    <button type="button" onclick="useAllPoint()"
+                            class="text-xs px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50">
+                        전액
+                    </button>
+                </span>
+            </div>
+            <p id="point-error" class="hidden text-xs text-red-600 text-right"></p>
+
+            <div class="flex justify-between pt-4 border-t">
+                <span class="font-semibold">최종 결제 금액</span>
+                <span id="pg-amount" class="text-lg font-bold"></span>
+            </div>
+            <p id="point-only-notice" class="hidden text-xs text-blue-600 text-right">
+                포인트로 전액 결제되어 카드 결제창이 열리지 않습니다.
+            </p>
+        </section>
+
+        <div class="flex gap-3">
+            <a href="/cart" class="flex-1 py-3 text-center border border-gray-300 rounded-lg hover:bg-gray-50">
+                장바구니로
+            </a>
+            <button id="pay-btn" onclick="startPayment()"
+                    class="flex-1 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-300">
+                결제하기
+            </button>
+        </div>
+    </div>
+</main>
+
+<th:block th:replace="~{layout/default :: footer}" />
+<th:block th:replace="~{layout/default :: scripts}" />
+
+<script>
+    // ── 공통 ────────────────────────────────────────────────
+    // 주문·결제·포인트 API는 ApiResponse({code, message, data})로 감싸져 있고
+    // 장바구니·상품 API는 감싸지 않는다. 어느 쪽이 와도 벗겨내는 헬퍼.
+    const unwrap = (r) => (r && typeof r === 'object' && 'data' in r && 'code' in r) ? r.data : r;
+
+    let checkout = null;      // CheckoutResponse
+    let portoneConfig = null; // { storeId, channelKey }
+
+    function getCartItemIds() {
+        return new URLSearchParams(location.search)
+            .getAll('cartItemIds').map(Number).filter(n => !isNaN(n));
+    }
+
+    // ── 주문서 로드 ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!requireAuth()) return;
+        loadCheckout();
+    });
+
+    async function loadCheckout() {
+        try {
+            const ids = getCartItemIds();
+            const url = ids.length
+                ? '/api/orders/checkout?' + ids.map(id => 'cartItemIds=' + id).join('&')
+                : '/api/orders/checkout';
+
+            const [cfgRes, chkRes] = await Promise.all([
+                apiFetch('/api/config/portone').catch(() => null),
+                apiFetch(url)
+            ]);
+
+            portoneConfig = unwrap(cfgRes);
+            checkout = unwrap(chkRes);
+
+            render();
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+        } catch (e) {
+            document.getElementById('loading').innerHTML =
+                `<p class="text-gray-500 mb-4">${e.message}</p>
+                 <a href="/cart" class="text-sm underline">장바구니로 돌아가기</a>`;
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!requireAuth()) return;
-            loadCheckout();
-        });
+    function render() {
+        document.getElementById('items').innerHTML = checkout.items.map(it => `
+            <tr class="border-b last:border-0">
+                <td class="py-3">
+                    ${it.productName}
+                    ${!it.available ? '<span class="ml-2 text-xs text-red-600">재고 부족</span>' : ''}
+                </td>
+                <td class="py-3 text-right text-gray-600">${formatPrice(it.price)}원</td>
+                <td class="py-3 text-right text-gray-600">${it.quantity}</td>
+                <td class="py-3 text-right font-medium">${formatPrice(it.subtotal)}원</td>
+            </tr>`).join('');
 
-        async function loadCheckout() {
-            try {
-                const cartItemIds = getCartItemIds();
-                const checkoutUrl = cartItemIds.length > 0
-                    ? '/api/orders/checkout?' + cartItemIds.map(id => 'cartItemIds=' + id).join('&')
-                    : '/api/orders/checkout';
+        document.getElementById('total-price').textContent = formatPrice(checkout.totalPrice) + '원';
+        document.getElementById('available-point').textContent = formatPrice(checkout.availablePoint);
 
-                const [config, checkout] = await Promise.allSettled([
-                    apiFetch('/api/config/portone'),
-                    apiFetch(checkoutUrl)
-                ]);
-
-                if (checkout.status === 'rejected') throw checkout.reason;
-
-                portoneConfig = config.status === 'fulfilled' ? config.value : null;
-                checkoutData = checkout.value;
-
-                const itemsContainer = document.getElementById('checkout-items');
-                itemsContainer.innerHTML = checkoutData.items.map(item => `
-                    <div class="py-6 flex gap-6 border-b border-gray-200 last:border-0">
-                        <div class="w-24 h-32 rounded-sm flex-shrink-0 flex items-center justify-center border border-gray-200 bg-gradient-to-br ${getProductVisual(item.productName).bg}">
-                            <i class="${getProductVisual(item.productName).icon} text-2xl ${getProductVisual(item.productName).color}"></i>
-                        </div>
-                        <div class="flex-1 flex flex-col justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-900 tracking-tight">${item.productName}</p>
-                                <p class="text-xs text-gray-500 mt-2">수량: ${item.quantity}</p>
-                            </div>
-                            <p class="text-base font-light text-gray-900">${formatPrice(item.subtotal)}원</p>
-                        </div>
-                    </div>
-                `).join('');
-
-                const total = formatPrice(checkoutData.totalPrice) + '원';
-                document.getElementById('checkout-total').textContent = total;
-                document.getElementById('checkout-subtotal').textContent = total;
-
-                document.getElementById('checkout-loading').classList.add('hidden');
-                document.getElementById('checkout-content').classList.remove('hidden');
-
-            } catch (e) {
-                showToast('주문서를 불러올 수 없습니다. 주문내역으로 이동합니다', 'warning');
-                setTimeout(() => { window.location.href = '/orders'; }, 1500);
-            }
+        // 재고 부족 상품이 있으면 결제 자체를 막는다
+        const soldOut = checkout.items.some(it => !it.available);
+        if (soldOut) {
+            const btn = document.getElementById('pay-btn');
+            btn.disabled = true;
+            btn.textContent = '재고 부족 상품이 있습니다';
         }
+        recalc();
+    }
 
-        async function startPayment() {
-            if (!checkoutData) return;
-            if (!portoneConfig) {
-                showToast('결제 설정이 아직 준비되지 않았습니다', 'warning');
+    // ── 금액 계산 ───────────────────────────────────────────
+    function usePointValue() {
+        const v = parseInt(document.getElementById('use-point').value, 10);
+        return isNaN(v) || v < 0 ? 0 : v;
+    }
+
+    function useAllPoint() {
+        // 보유 포인트와 주문 총액 중 작은 쪽까지만 사용 가능
+        document.getElementById('use-point').value =
+            Math.min(checkout.availablePoint, checkout.totalPrice);
+        recalc();
+    }
+
+    function recalc() {
+        const use = usePointValue();
+        const err = document.getElementById('point-error');
+        const btn = document.getElementById('pay-btn');
+        let msg = '';
+
+        if (use > checkout.availablePoint) msg = '보유 포인트를 초과했습니다';
+        else if (use > checkout.totalPrice) msg = '주문 총액을 초과했습니다';
+
+        err.textContent = msg;
+        err.classList.toggle('hidden', !msg);
+
+        const pgAmount = Math.max(checkout.totalPrice - use, 0);
+        document.getElementById('pg-amount').textContent = formatPrice(pgAmount) + '원';
+        document.getElementById('point-only-notice')
+                .classList.toggle('hidden', pgAmount !== 0);
+
+        const soldOut = checkout.items.some(it => !it.available);
+        btn.disabled = !!msg || soldOut;
+    }
+
+    // ── 결제 ────────────────────────────────────────────────
+    async function startPayment() {
+        const btn = document.getElementById('pay-btn');
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '주문 생성 중...';
+
+        let order = null;
+
+        try {
+            // 1) 주문 생성 (재고 선차감 + 결제 사전 기록)
+            order = unwrap(await apiFetch('/api/orders/checkout', {
+                method: 'POST',
+                body: JSON.stringify({
+                    cartItemIds: getCartItemIds(),
+                    usePoint: usePointValue()
+                })
+            }));
+
+            // 2) PG 금액이 0이면 결제창을 건너뛰고 바로 확정
+            if (order.pgAmount === 0) {
+                btn.textContent = '결제 확인 중...';
+                await confirmPayment(order.orderId, order.portonePaymentId);
+                location.href = '/orders/complete?orderId=' + order.orderId;
                 return;
             }
 
-            const btn = document.getElementById('btn-pay');
-            const originalHTML = btn.innerHTML;
+            // 3) PortOne 결제창
+            if (!portoneConfig) throw new Error('결제 설정을 불러오지 못했습니다');
 
-            btn.disabled = true;
-            btn.innerHTML = '처리 중...';
+            btn.textContent = '결제창 여는 중...';
+            const member = await refreshMember();
+            const customer = {};
+            if (member?.name) customer.fullName = member.name;
+            if (member?.email) customer.email = member.email;
+            if (member?.phoneNumber) customer.phoneNumber = member.phoneNumber;
 
-            try {
-                const cartItemIds = getCartItemIds();
-                const orderBody = cartItemIds.length > 0 ? { cartItemIds } : {};
-                const orderRes = await apiFetch('/api/orders/checkout', {
-                    method: 'POST',
-                    body: JSON.stringify(orderBody)
-                });
+            const payRes = await PortOne.requestPayment({
+                storeId: portoneConfig.storeId,
+                channelKey: portoneConfig.channelKey,
+                paymentId: order.portonePaymentId,
+                orderName: order.orderName,
+                totalAmount: order.pgAmount,      // 주문총액이 아니라 PG 실결제액
+                currency: 'KRW',
+                payMethod: 'CARD',
+                customer
+            });
 
-                btn.innerHTML = '결제창 여는 중...';
-
-                const member = await refreshMember();
-                const customer = {};
-                if (member) {
-                    if (member.name) customer.fullName = member.name;
-                    if (member.email) customer.email = member.email;
-                    if (member.phoneNumber) customer.phoneNumber = member.phoneNumber;
-                }
-
-                const payResponse = await PortOne.requestPayment({
-                    storeId: portoneConfig.storeId,
-                    channelKey: portoneConfig.channelKey,
-                    paymentId: orderRes.portonePaymentId,
-                    orderName: orderRes.orderName,
-                    totalAmount: orderRes.totalPrice,
-                    currency: 'KRW',
-                    payMethod: 'CARD',
-                    customer: customer,
-                });
-
-                if (payResponse.code === undefined) {
-                    btn.innerHTML = '결제 확인 중...';
-
-                    await apiFetch('/api/payments/confirm', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            orderId: orderRes.orderId,
-                            portonePaymentId: payResponse.paymentId
-                        })
-                    });
-
-                    window.location.href = '/orders/complete?orderId=' + orderRes.orderId;
-
-                } else {
-                    showToast('결제가 취소되었습니다. 주문내역에서 확인해주세요', 'warning');
-                    setTimeout(() => { window.location.href = '/orders'; }, 1500);
-                }
-
-            } catch (error) {
-                showToast('결제 오류: ' + error.message, 'danger');
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
+            // code가 있으면 결제창에서 취소·실패한 것
+            if (payRes.code !== undefined) {
+                await cancelOrderQuietly(order.orderId);
+                showToast('결제가 취소되었습니다', 'warning');
+                setTimeout(() => location.href = '/orders', 1200);
+                return;
             }
+
+            // 4) 결제 확정
+            btn.textContent = '결제 확인 중...';
+            await confirmPayment(order.orderId, payRes.paymentId);
+            location.href = '/orders/complete?orderId=' + order.orderId;
+
+        } catch (e) {
+            // 주문은 만들어졌는데 이후 단계에서 실패한 경우 → 재고를 되돌려야 한다
+            if (order?.orderId) await cancelOrderQuietly(order.orderId);
+            showToast(e.message || '결제 중 오류가 발생했습니다', 'danger');
+            btn.disabled = false;
+            btn.textContent = original;
         }
-    </script>
+    }
+
+    function confirmPayment(orderId, portonePaymentId) {
+        return apiFetch('/api/payments/confirm', {
+            method: 'POST',
+            body: JSON.stringify({ orderId, portonePaymentId })
+        });
+    }
+
+    // 주문 취소 + 재고 복구. 실패해도 사용자 흐름은 막지 않는다.
+    async function cancelOrderQuietly(orderId) {
+        try {
+            await apiFetch(`/api/orders/${orderId}/cancel`, { method: 'POST' });
+        } catch (e) {
+            console.warn('주문 취소 실패 - 주문 상세에서 수동 취소가 필요합니다', e);
+        }
+    }
+</script>
 </body>
 </html>

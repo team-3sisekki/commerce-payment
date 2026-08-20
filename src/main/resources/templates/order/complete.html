@@ -1,109 +1,83 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{layout/default :: head('주문 완료')}" />
 </head>
-<body class="font-sans bg-white text-sf-black min-h-screen flex flex-col">
-    <th:block th:replace="~{layout/default :: header}" />
+<body class="bg-gray-50">
 
-    <main class="flex-1">
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 py-20 text-center">
+<th:block th:replace="~{layout/default :: header}" />
 
-            <div id="complete-loading" class="py-24">
-                <div class="spinner-dark mx-auto"></div>
+<main class="max-w-xl mx-auto px-4 py-16">
+
+    <div id="loading" class="py-20 text-center text-gray-500">확인 중...</div>
+
+    <div id="content" class="hidden text-center">
+        <div class="text-5xl mb-4">✓</div>
+        <h1 class="text-2xl font-bold mb-2">주문이 완료되었습니다</h1>
+        <p class="text-sm text-gray-500 mb-8">주문해 주셔서 감사합니다.</p>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6 space-y-3 text-sm text-left">
+            <div class="flex justify-between"><span class="text-gray-600">주문번호</span><span id="order-number" class="font-mono"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">주문상품</span><span id="order-name"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">주문 총액</span><span id="total-price"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">포인트 사용</span><span id="used-point"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">카드 결제</span><span id="pg-amount"></span></div>
+            <div class="flex justify-between pt-3 border-t">
+                <span class="text-gray-600">적립 포인트</span>
+                <span id="accrued-point" class="text-emerald-600 font-medium"></span>
             </div>
+        </section>
 
-            <div id="complete-content" class="hidden">
-                <div class="animate-bounce-in mb-12">
-                    <div class="w-28 h-28 bg-black rounded-full flex items-center justify-center mx-auto border-4 border-gray-200">
-                        <i class="ri-check-line text-6xl text-white font-light"></i>
-                    </div>
-                </div>
-
-                <h1 class="text-5xl font-light text-gray-900 mb-4 animate-fade-in tracking-widest uppercase letter-spacing-2">주문 완료</h1>
-                <p class="text-sm text-gray-600 mb-12 animate-fade-in uppercase tracking-widest font-medium">구매해 주셔서 감사합니다</p>
-
-                <div class="bg-white border border-gray-200 p-10 mb-12 animate-scale-in">
-                    <div id="order-details" class="space-y-6 text-left"></div>
-                </div>
-
-                <div class="border border-gray-200 p-8 mb-12 animate-fade-in text-left">
-                    <h2 class="text-xs font-semibold text-gray-900 mb-8 uppercase tracking-widest">다음 안내</h2>
-                    <ul class="space-y-6">
-                        <li class="flex items-start gap-4">
-                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white text-sm font-light flex-shrink-0 mt-0.5">1</span>
-                            <span class="text-sm text-gray-600 pt-0.5">주문 확인 이메일이 발송되었습니다</span>
-                        </li>
-                        <li class="flex items-start gap-4">
-                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white text-sm font-light flex-shrink-0 mt-0.5">2</span>
-                            <span class="text-sm text-gray-600 pt-0.5">주문하신 상품은 1~2 영업일 내 정성껏 포장하여 발송됩니다</span>
-                        </li>
-                        <li class="flex items-start gap-4">
-                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white text-sm font-light flex-shrink-0 mt-0.5">3</span>
-                            <span class="text-sm text-gray-600 pt-0.5">주문내역에서 언제든지 배송 현황을 확인하실 수 있습니다</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="flex gap-4 animate-fade-in">
-                    <a href="/orders" class="flex-1 bg-black hover:bg-gray-900 text-white font-light py-4 text-sm transition-all duration-300 uppercase tracking-widest letter-spacing-1">
-                        주문내역 보기
-                    </a>
-                    <a href="/" class="flex-1 border border-gray-300 text-gray-900 hover:bg-gray-50 font-light py-4 text-sm transition-colors uppercase tracking-widest letter-spacing-1">
-                        쇼핑 계속하기
-                    </a>
-                </div>
-            </div>
+        <div class="flex gap-3 mt-8">
+            <a href="/" class="flex-1 py-3 text-center border border-gray-300 rounded-lg hover:bg-gray-50">쇼핑 계속하기</a>
+            <a id="detail-link" href="/orders" class="flex-1 py-3 text-center bg-black text-white rounded-lg hover:bg-gray-800">주문 상세</a>
         </div>
-    </main>
+    </div>
+</main>
 
-    <th:block th:replace="~{layout/default :: footer}" />
-    <th:block th:replace="~{layout/default :: scripts}" />
+<th:block th:replace="~{layout/default :: footer}" />
+<th:block th:replace="~{layout/default :: scripts}" />
 
-    <script>
-        document.addEventListener('DOMContentLoaded', loadComplete);
+<script>
+    const unwrap = (r) => (r && typeof r === 'object' && 'data' in r && 'code' in r) ? r.data : r;
 
-        async function loadComplete() {
-            const params = new URLSearchParams(window.location.search);
-            const orderId = params.get('orderId');
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!requireAuth()) return;
+        loadComplete();
+    });
 
-            if (!orderId) {
-                document.getElementById('complete-loading').innerHTML =
-                    '<p class="text-gray-500 text-sm">주문 정보가 없습니다</p>';
-                return;
-            }
+    async function loadComplete() {
+        const orderId = new URLSearchParams(location.search).get('orderId');
 
-            try {
-                const order = await apiFetch(`/api/orders/${orderId}`);
-
-                const details = document.getElementById('order-details');
-                details.innerHTML = `
-                    <div class="flex justify-between pb-6 border-b border-gray-200">
-                        <span class="text-sm text-gray-600">주문번호</span>
-                        <span class="font-mono font-medium text-gray-900 text-sm">${order.orderId}</span>
-                    </div>
-                    <div class="flex justify-between pb-6 border-b border-gray-200">
-                        <span class="text-sm text-gray-600">주문일시</span>
-                        <span class="text-sm text-gray-900">${new Date(order.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    </div>
-                    <div class="flex justify-between pb-6 border-b border-gray-200">
-                        <span class="text-sm text-gray-600">주문상품</span>
-                        <span class="text-sm text-gray-900">${order.orderName}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-sm font-medium text-gray-900 uppercase tracking-wider">총 결제금액</span>
-                        <span class="text-lg font-light text-gray-900">${formatPrice(order.totalPrice)}원</span>
-                    </div>
-                `;
-
-                document.getElementById('complete-loading').classList.add('hidden');
-                document.getElementById('complete-content').classList.remove('hidden');
-
-            } catch (e) {
-                document.getElementById('complete-loading').innerHTML =
-                    '<p class="text-gray-500 text-sm">주문 정보를 불러올 수 없습니다</p>';
-            }
+        if (!orderId) {
+            document.getElementById('loading').innerHTML =
+                `<p class="text-gray-500 mb-4">주문 정보가 없습니다</p>
+                 <a href="/orders" class="text-sm underline">주문 내역으로</a>`;
+            return;
         }
-    </script>
+
+        try {
+            const order = unwrap(await apiFetch(`/api/orders/${orderId}`));
+
+            document.getElementById('order-number').textContent  = order.orderNumber || ('#' + order.orderId);
+            document.getElementById('order-name').textContent     = order.orderName;
+            document.getElementById('total-price').textContent    = formatPrice(order.totalPrice) + '원';
+            document.getElementById('used-point').textContent     = formatPrice(order.usedPoint) + 'P';
+            document.getElementById('pg-amount').textContent      = formatPrice(order.pgAmount) + '원';
+            document.getElementById('accrued-point').textContent  = '+' + formatPrice(order.accruedPoint) + 'P';
+            document.getElementById('detail-link').href           = '/orders/' + order.orderId;
+
+            // 결제 완료 시점에 장바구니가 비워지므로 헤더 뱃지를 갱신한다
+            updateCartBadge();
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+        } catch (e) {
+            document.getElementById('loading').innerHTML =
+                `<p class="text-gray-500 mb-4">${e.message}</p>
+                 <a href="/orders" class="text-sm underline">주문 내역으로</a>`;
+        }
+    }
+</script>
 </body>
 </html>

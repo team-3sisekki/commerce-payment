@@ -1,75 +1,71 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{layout/default :: head('주문 상세')}" />
 </head>
-<body class="font-sans bg-white text-sf-black min-h-screen flex flex-col">
+<body class="bg-gray-50">
+
 <th:block th:replace="~{layout/default :: header}" />
 
-<main class="flex-1">
-    <div class="max-w-4xl mx-auto px-4 sm:px-8 py-16">
+<main class="max-w-3xl mx-auto px-4 py-10">
+    <a href="/orders" class="text-sm text-gray-500 hover:text-black">&larr; 주문 내역</a>
 
-        <div id="detail-loading" class="text-center py-24">
-            <div class="spinner-dark mx-auto"></div>
+    <div id="loading" class="py-20 text-center text-gray-500">불러오는 중...</div>
+
+    <div id="content" class="hidden mt-4 space-y-6">
+
+        <div class="flex items-center justify-between">
+            <h1 id="order-number" class="text-2xl font-bold font-mono"></h1>
+            <span id="status-badge" class="px-3 py-1 rounded-full text-xs font-medium"></span>
         </div>
+        <p id="order-date" class="text-sm text-gray-500 -mt-4"></p>
 
-        <div id="detail-content" class="hidden animate-fade-in">
+        <!-- 주문 상품 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="font-semibold mb-4">주문 상품</h2>
+            <table class="w-full text-sm">
+                <thead class="text-gray-500 border-b">
+                <tr>
+                    <th class="text-left py-2">상품</th>
+                    <th class="text-right py-2">가격</th>
+                    <th class="text-right py-2">수량</th>
+                    <th class="text-right py-2">소계</th>
+                </tr>
+                </thead>
+                <tbody id="items"></tbody>
+            </table>
+        </section>
 
-            <nav class="flex items-center gap-2 text-[10px] text-gray-500 mb-10 uppercase tracking-widest font-black">
-                <a href="/" class="hover:text-gray-900 transition-colors">홈</a>
-                <span class="text-gray-300">/</span>
-                <a href="/orders" class="hover:text-gray-900 transition-colors">주문내역</a>
-                <span class="text-gray-300">/</span>
-                <span class="text-gray-700" id="breadcrumb-id">주문 상세</span>
-            </nav>
+        <!-- 결제 정보 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6 space-y-3 text-sm">
+            <h2 class="font-semibold mb-2">결제 정보</h2>
+            <div class="flex justify-between"><span class="text-gray-600">주문 총액</span><span id="total-price"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">포인트 사용</span><span id="used-point"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">카드 결제</span><span id="pg-amount"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">적립 포인트</span><span id="accrued-point"></span></div>
+            <div class="flex justify-between pt-3 border-t"><span class="text-gray-600">결제 상태</span><span id="payment-status"></span></div>
+        </section>
 
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
-                <div>
-                    <h1 class="text-3xl lg:text-4xl font-light text-gray-900 tracking-tight">주문 상세</h1>
-                    <p class="text-sm text-gray-500 mt-2 font-mono" id="order-id-display"></p>
-                </div>
-                <span id="status-badge" class="self-start px-5 py-2 rounded-full text-xs font-medium"></span>
+        <div id="actions" class="flex gap-3"></div>
+    </div>
+
+    <!-- 환불 모달 -->
+    <div id="refund-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-lg w-full p-6 space-y-4">
+            <h3 class="font-bold text-lg">환불 요청</h3>
+            <p class="text-xs text-gray-500">환불할 상품과 수량을 선택하세요. 부분 환불도 가능합니다.</p>
+
+            <div id="refund-items" class="space-y-3 max-h-64 overflow-y-auto"></div>
+
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">환불 사유</label>
+                <input id="refund-reason" type="text" value="단순 변심"
+                       class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                <div class="border border-gray-200 p-6">
-                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">주문일시</p>
-                    <p class="text-sm text-gray-900" id="order-date"></p>
-                </div>
-                <div class="border border-gray-200 p-6">
-                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">주문명</p>
-                    <p class="text-sm text-gray-900" id="order-name"></p>
-                </div>
-                <div class="border border-gray-200 p-6">
-                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">결제 금액</p>
-                    <p class="text-lg font-light text-gray-900" id="order-total"></p>
-                </div>
-            </div>
-
-            <div class="mb-10">
-                <h2 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-6">주문 상품</h2>
-                <div class="border border-gray-200">
-                    <table class="w-full">
-                        <thead>
-                        <tr class="border-b border-gray-200 bg-gray-50">
-                            <th class="text-left px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">상품</th>
-                            <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">단가</th>
-                            <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">수량</th>
-                            <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">소계</th>
-                        </tr>
-                        </thead>
-                        <tbody id="items-tbody"></tbody>
-                        <tfoot>
-                        <tr class="border-t-2 border-gray-900">
-                            <td colspan="3" class="px-6 py-5 text-right text-xs font-black text-gray-900 uppercase tracking-wider">합계</td>
-                            <td class="px-6 py-5 text-right text-lg font-light text-gray-900" id="items-total"></td>
-                        </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <div id="action-section" class="flex flex-col sm:flex-row items-center gap-4">
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeRefund()" class="flex-1 py-2.5 border border-gray-300 rounded hover:bg-gray-50">취소</button>
+                <button onclick="submitRefund()" class="flex-1 py-2.5 bg-red-600 text-white rounded hover:bg-red-700">환불 요청</button>
             </div>
         </div>
     </div>
@@ -79,102 +75,153 @@
 <th:block th:replace="~{layout/default :: scripts}" />
 
 <script>
-    // PaymentStatus enum(PENDING, COMPLETED, FAILED, CANCELLED, PARTIAL_REFUND, FULL_REFUND)에 맞춘 라벨/색상
-    const statusConfig = {
-        PENDING: { label: '결제 대기', color: 'text-amber-600 bg-amber-50' },
-        COMPLETED: { label: '주문 확정', color: 'text-emerald-600 bg-emerald-50' },
-        FAILED: { label: '결제 실패', color: 'text-red-600 bg-red-50' },
-        CANCELLED: { label: '취소됨', color: 'text-gray-600 bg-gray-100' },
-        PARTIAL_REFUND: { label: '부분 환불', color: 'text-blue-600 bg-blue-50' },
-        FULL_REFUND: { label: '전액 환불', color: 'text-gray-600 bg-gray-100' }
+    const unwrap = (r) => (r && typeof r === 'object' && 'data' in r && 'code' in r) ? r.data : r;
+
+    const ORDER_STATUS = {
+        PAYMENT_PENDING: { label: '결제 대기', color: 'bg-amber-100 text-amber-700' },
+        COMPLETED:       { label: '주문 완료', color: 'bg-emerald-100 text-emerald-700' },
+        CANCELED:        { label: '주문 취소', color: 'bg-gray-200 text-gray-600' }
     };
 
-    document.addEventListener('DOMContentLoaded', function() {
+    const PAYMENT_STATUS = {
+        PENDING:        '결제 대기',
+        COMPLETED:      '결제 완료',
+        FAILED:         '결제 실패',
+        CANCELLED:      '결제 취소',
+        PARTIAL_REFUND: '부분 환불',
+        FULL_REFUND:    '전액 환불'
+    };
+
+    let order = null;
+
+    function getOrderId() {
+        const parts = location.pathname.split('/');
+        return parts[parts.length - 1];
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
         if (!requireAuth()) return;
-        loadOrderDetail();
+        loadOrder();
     });
 
-    async function loadOrderDetail() {
-        const pathParts = window.location.pathname.split('/');
-        const orderId = pathParts[pathParts.length - 1];
-
+    async function loadOrder() {
         try {
-            const order = await apiFetch(`/api/orders/${orderId}`);
-
-            document.getElementById('breadcrumb-id').textContent = `#${order.orderId}`;
-            document.title = `주문 #${order.orderId} | SpartaFashion`;
-
-            document.getElementById('order-id-display').textContent = `주문번호 #${order.orderId}`;
-            const sc = statusConfig[order.status] || statusConfig.PENDING;
-            const badge = document.getElementById('status-badge');
-            badge.textContent = sc.label;
-            badge.className = `self-start px-5 py-2 rounded-full text-xs font-medium ${sc.color}`;
-
-            const orderDate = new Date(order.createdAt).toLocaleDateString('ko-KR', {
-                year: 'numeric', month: 'long', day: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
-            document.getElementById('order-date').textContent = orderDate;
-            document.getElementById('order-name').textContent = order.orderName || '-';
-            document.getElementById('order-total').textContent = formatPrice(order.totalPrice) + '원';
-
-            const tbody = document.getElementById('items-tbody');
-            tbody.innerHTML = (order.orderItems || []).map(item => `
-                    <tr class="border-t border-gray-100">
-                        <td class="px-6 py-4 text-sm text-gray-900">${item.productName}</td>
-                        <td class="px-6 py-4 text-sm text-right text-gray-600">${formatPrice(item.orderPrice)}원</td>
-                        <td class="px-6 py-4 text-sm text-right text-gray-600">${item.quantity}</td>
-                        <td class="px-6 py-4 text-sm text-right text-gray-900 font-light">${formatPrice(item.orderPrice * item.quantity)}원</td>
-                    </tr>
-                `).join('');
-
-            document.getElementById('items-total').textContent = formatPrice(order.totalPrice) + '원';
-
-            const actionSection = document.getElementById('action-section');
-            let actions = `
-                    <a href="/orders" class="px-8 py-4 border-2 border-black text-black text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-black hover:text-white transition-all">
-                        주문내역으로 돌아가기
-                    </a>`;
-
-            if (order.status === 'PENDING') {
-                actions += `
-                        <span class="px-8 py-4 border-2 border-gray-200 text-gray-400 text-sm font-black text-center uppercase tracking-wide rounded-lg">
-                            결제 미완료 주문
-                        </span>`;
-            } else if (order.status === 'COMPLETED') {
-                actions += `
-                        <button onclick="cancelOrder('${order.paymentId}')" class="px-8 py-4 bg-red-600 text-white text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-red-700 transition-all">
-                            주문 취소
-                        </button>`;
-            }
-
-            actionSection.innerHTML = actions;
-
-            document.getElementById('detail-loading').classList.add('hidden');
-            document.getElementById('detail-content').classList.remove('hidden');
-
+            order = unwrap(await apiFetch(`/api/orders/${getOrderId()}`));
+            render();
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
         } catch (e) {
-            document.getElementById('detail-loading').innerHTML =
-                '<div class="text-center py-20"><i class="ri-error-warning-line text-5xl text-gray-300 mb-4"></i>' +
-                '<p class="text-gray-500 mb-4">주문을 찾을 수 없습니다</p>' +
-                '<a href="/orders" class="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-semibold">' +
-                '<i class="ri-arrow-left-line"></i> 주문내역으로 돌아가기</a></div>';
+            document.getElementById('loading').innerHTML =
+                `<p class="text-gray-500 mb-4">${e.message}</p>
+                 <a href="/orders" class="text-sm underline">주문 내역으로</a>`;
         }
     }
 
-    function cancelOrder(paymentId) {
-        showConfirm('이 주문을 취소하시겠습니까? 결제 금액이 환불됩니다.', async () => {
+    function render() {
+        const st = ORDER_STATUS[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-600' };
+
+        document.getElementById('order-number').textContent = order.orderNumber || ('#' + order.orderId);
+        document.getElementById('order-date').textContent = new Date(order.createdAt).toLocaleString('ko-KR');
+
+        const badge = document.getElementById('status-badge');
+        badge.textContent = st.label;
+        badge.className = `px-3 py-1 rounded-full text-xs font-medium ${st.color}`;
+
+        document.getElementById('items').innerHTML = order.orderItems.map(it => `
+            <tr class="border-b last:border-0">
+                <td class="py-3">${it.productName}</td>
+                <td class="py-3 text-right text-gray-600">${formatPrice(it.orderPrice)}원</td>
+                <td class="py-3 text-right text-gray-600">${it.quantity}</td>
+                <td class="py-3 text-right font-medium">${formatPrice(it.subtotal)}원</td>
+            </tr>`).join('');
+
+        document.getElementById('total-price').textContent   = formatPrice(order.totalPrice) + '원';
+        document.getElementById('used-point').textContent    = formatPrice(order.usedPoint) + 'P';
+        document.getElementById('pg-amount').textContent     = formatPrice(order.pgAmount) + '원';
+        document.getElementById('accrued-point').textContent = formatPrice(order.accruedPoint) + 'P';
+        document.getElementById('payment-status').textContent =
+            PAYMENT_STATUS[order.paymentStatus] || order.paymentStatus || '-';
+
+        renderActions();
+    }
+
+    function renderActions() {
+        let html = `<a href="/orders" class="flex-1 py-3 text-center border border-gray-300 rounded-lg hover:bg-gray-50">주문 내역</a>`;
+
+        if (order.status === 'PAYMENT_PENDING') {
+            // 결제 전 → 주문 취소 API (재고 복구). 재시도는 장바구니에서 새 주문으로.
+            html += `
+                <button onclick="cancelPendingOrder()" class="flex-1 py-3 bg-gray-800 text-white rounded-lg hover:bg-black">주문 취소</button>
+                <a href="/cart" class="flex-1 py-3 text-center bg-black text-white rounded-lg hover:bg-gray-800">다시 주문하기</a>`;
+        } else if (order.status === 'COMPLETED') {
+            html += `<button onclick="openRefund()" class="flex-1 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700">환불 요청</button>`;
+        }
+
+        document.getElementById('actions').innerHTML = html;
+    }
+
+    // ── 결제대기 주문 취소 ──────────────────────────────────
+    function cancelPendingOrder() {
+        showConfirm('주문을 취소하시겠습니까? 차감된 재고가 복구됩니다.', async () => {
             try {
-                await apiFetch(`/api/payments/${paymentId}/cancel`, {
-                    method: 'POST',
-                    body: JSON.stringify({ reason: '사용자 요청 취소' })
-                });
+                await apiFetch(`/api/orders/${order.orderId}/cancel`, { method: 'POST' });
                 showToast('주문이 취소되었습니다', 'success');
-                loadOrderDetail();
+                loadOrder();
             } catch (e) {
                 showToast('취소 실패: ' + e.message, 'danger');
             }
         });
+    }
+
+    // ── 환불 ────────────────────────────────────────────────
+    function openRefund() {
+        document.getElementById('refund-items').innerHTML = order.orderItems.map(it => `
+            <div class="flex items-center justify-between gap-3 border border-gray-200 rounded p-3">
+                <label class="flex items-center gap-2 text-sm flex-1">
+                    <input type="checkbox" class="refund-check" data-id="${it.orderItemId}" checked>
+                    <span>${it.productName}</span>
+                </label>
+                <input type="number" class="refund-qty w-20 border border-gray-300 rounded px-2 py-1 text-right text-sm"
+                       data-id="${it.orderItemId}" min="1" max="${it.quantity}" value="${it.quantity}">
+                <span class="text-xs text-gray-400">/ ${it.quantity}</span>
+            </div>`).join('');
+
+        document.getElementById('refund-modal').classList.remove('hidden');
+    }
+
+    function closeRefund() {
+        document.getElementById('refund-modal').classList.add('hidden');
+    }
+
+    async function submitRefund() {
+        const items = [];
+        document.querySelectorAll('.refund-check').forEach(chk => {
+            if (!chk.checked) return;
+            const id = chk.dataset.id;
+            const qty = parseInt(document.querySelector(`.refund-qty[data-id="${id}"]`).value, 10);
+            if (qty > 0) items.push({ orderItemId: Number(id), requestQuantity: qty });
+        });
+
+        if (items.length === 0) {
+            showToast('환불할 상품을 선택하세요', 'warning');
+            return;
+        }
+
+        try {
+            const res = unwrap(await apiFetch('/api/refunds', {
+                method: 'POST',
+                body: JSON.stringify({
+                    paymentId: order.paymentId,
+                    cancelReason: document.getElementById('refund-reason').value || '단순 변심',
+                    items
+                })
+            }));
+            closeRefund();
+            showToast(`환불 완료 — 카드 ${formatPrice(res.pgRefundAmount)}원, 포인트 ${formatPrice(res.pointRefundAmount)}P`, 'success');
+            loadOrder();
+        } catch (e) {
+            showToast('환불 실패: ' + e.message, 'danger');
+        }
     }
 </script>
 </body>
