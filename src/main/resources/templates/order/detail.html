@@ -4,118 +4,123 @@
     <th:block th:replace="~{layout/default :: head('주문 상세')}" />
 </head>
 <body class="font-sans bg-white text-sf-black min-h-screen flex flex-col">
-    <th:block th:replace="~{layout/default :: header}" />
+<th:block th:replace="~{layout/default :: header}" />
 
-    <main class="flex-1">
-        <div class="max-w-4xl mx-auto px-4 sm:px-8 py-16">
+<main class="flex-1">
+    <div class="max-w-4xl mx-auto px-4 sm:px-8 py-16">
 
-            <div id="detail-loading" class="text-center py-24">
-                <div class="spinner-dark mx-auto"></div>
+        <div id="detail-loading" class="text-center py-24">
+            <div class="spinner-dark mx-auto"></div>
+        </div>
+
+        <div id="detail-content" class="hidden animate-fade-in">
+
+            <nav class="flex items-center gap-2 text-[10px] text-gray-500 mb-10 uppercase tracking-widest font-black">
+                <a href="/" class="hover:text-gray-900 transition-colors">홈</a>
+                <span class="text-gray-300">/</span>
+                <a href="/orders" class="hover:text-gray-900 transition-colors">주문내역</a>
+                <span class="text-gray-300">/</span>
+                <span class="text-gray-700" id="breadcrumb-id">주문 상세</span>
+            </nav>
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
+                <div>
+                    <h1 class="text-3xl lg:text-4xl font-light text-gray-900 tracking-tight">주문 상세</h1>
+                    <p class="text-sm text-gray-500 mt-2 font-mono" id="order-id-display"></p>
+                </div>
+                <span id="status-badge" class="self-start px-5 py-2 rounded-full text-xs font-medium"></span>
             </div>
 
-            <div id="detail-content" class="hidden animate-fade-in">
-
-                <nav class="flex items-center gap-2 text-[10px] text-gray-500 mb-10 uppercase tracking-widest font-black">
-                    <a href="/" class="hover:text-gray-900 transition-colors">홈</a>
-                    <span class="text-gray-300">/</span>
-                    <a href="/orders" class="hover:text-gray-900 transition-colors">주문내역</a>
-                    <span class="text-gray-300">/</span>
-                    <span class="text-gray-700" id="breadcrumb-id">주문 상세</span>
-                </nav>
-
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
-                    <div>
-                        <h1 class="text-3xl lg:text-4xl font-light text-gray-900 tracking-tight">주문 상세</h1>
-                        <p class="text-sm text-gray-500 mt-2 font-mono" id="order-id-display"></p>
-                    </div>
-                    <span id="status-badge" class="self-start px-5 py-2 rounded-full text-xs font-medium"></span>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+                <div class="border border-gray-200 p-6">
+                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">주문일시</p>
+                    <p class="text-sm text-gray-900" id="order-date"></p>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                    <div class="border border-gray-200 p-6">
-                        <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">주문일시</p>
-                        <p class="text-sm text-gray-900" id="order-date"></p>
-                    </div>
-                    <div class="border border-gray-200 p-6">
-                        <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">주문명</p>
-                        <p class="text-sm text-gray-900" id="order-name"></p>
-                    </div>
-                    <div class="border border-gray-200 p-6">
-                        <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">결제 금액</p>
-                        <p class="text-lg font-light text-gray-900" id="order-total"></p>
-                    </div>
+                <div class="border border-gray-200 p-6">
+                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">주문명</p>
+                    <p class="text-sm text-gray-900" id="order-name"></p>
                 </div>
-
-                <div class="mb-10">
-                    <h2 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-6">주문 상품</h2>
-                    <div class="border border-gray-200">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-200 bg-gray-50">
-                                    <th class="text-left px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">상품</th>
-                                    <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">단가</th>
-                                    <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">수량</th>
-                                    <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">소계</th>
-                                </tr>
-                            </thead>
-                            <tbody id="items-tbody"></tbody>
-                            <tfoot>
-                                <tr class="border-t-2 border-gray-900">
-                                    <td colspan="3" class="px-6 py-5 text-right text-xs font-black text-gray-900 uppercase tracking-wider">합계</td>
-                                    <td class="px-6 py-5 text-right text-lg font-light text-gray-900" id="items-total"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                <div class="border border-gray-200 p-6">
+                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">결제 금액</p>
+                    <p class="text-lg font-light text-gray-900" id="order-total"></p>
                 </div>
+            </div>
 
-                <div id="action-section" class="flex flex-col sm:flex-row items-center gap-4">
+            <div class="mb-10">
+                <h2 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-6">주문 상품</h2>
+                <div class="border border-gray-200">
+                    <table class="w-full">
+                        <thead>
+                        <tr class="border-b border-gray-200 bg-gray-50">
+                            <th class="text-left px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">상품</th>
+                            <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">단가</th>
+                            <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">수량</th>
+                            <th class="text-right px-6 py-4 font-medium text-gray-900 text-xs uppercase tracking-wider">소계</th>
+                        </tr>
+                        </thead>
+                        <tbody id="items-tbody"></tbody>
+                        <tfoot>
+                        <tr class="border-t-2 border-gray-900">
+                            <td colspan="3" class="px-6 py-5 text-right text-xs font-black text-gray-900 uppercase tracking-wider">합계</td>
+                            <td class="px-6 py-5 text-right text-lg font-light text-gray-900" id="items-total"></td>
+                        </tr>
+                        </tfoot>
+                    </table>
                 </div>
+            </div>
+
+            <div id="action-section" class="flex flex-col sm:flex-row items-center gap-4">
             </div>
         </div>
-    </main>
+    </div>
+</main>
 
-    <th:block th:replace="~{layout/default :: footer}" />
-    <th:block th:replace="~{layout/default :: scripts}" />
+<th:block th:replace="~{layout/default :: footer}" />
+<th:block th:replace="~{layout/default :: scripts}" />
 
-    <script>
-        const statusConfig = {
-            PENDING_PAYMENT: { label: '결제 대기', color: 'text-amber-600 bg-amber-50' },
-            CONFIRMED: { label: '주문 확정', color: 'text-emerald-600 bg-emerald-50' },
-            CANCELLED: { label: '취소됨', color: 'text-gray-600 bg-gray-100' }
-        };
+<script>
+    // PaymentStatus enum(PENDING, COMPLETED, FAILED, CANCELLED, PARTIAL_REFUND, FULL_REFUND)에 맞춘 라벨/색상
+    let currentOrder = null;
+    const statusConfig = {
+        PENDING: { label: '결제 대기', color: 'text-amber-600 bg-amber-50' },
+        COMPLETED: { label: '주문 확정', color: 'text-emerald-600 bg-emerald-50' },
+        FAILED: { label: '결제 실패', color: 'text-red-600 bg-red-50' },
+        CANCELLED: { label: '취소됨', color: 'text-gray-600 bg-gray-100' },
+        PARTIAL_REFUND: { label: '부분 환불', color: 'text-blue-600 bg-blue-50' },
+        FULL_REFUND: { label: '전액 환불', color: 'text-gray-600 bg-gray-100' }
+    };
 
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!requireAuth()) return;
-            loadOrderDetail();
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!requireAuth()) return;
+        loadOrderDetail();
+    });
 
-        async function loadOrderDetail() {
-            const pathParts = window.location.pathname.split('/');
-            const orderId = pathParts[pathParts.length - 1];
+    async function loadOrderDetail() {
+        const pathParts = window.location.pathname.split('/');
+        const orderId = pathParts[pathParts.length - 1];
 
-            try {
-                const order = await apiFetch(`/api/orders/${orderId}`);
+        try {
+            const order = await apiFetch(`/api/orders/${orderId}`);
 
-                document.getElementById('breadcrumb-id').textContent = `#${order.orderId}`;
-                document.title = `주문 #${order.orderId} | SpartaFashion`;
+            document.getElementById('breadcrumb-id').textContent = `#${order.orderId}`;
+            document.title = `주문 #${order.orderId} | SpartaFashion`;
 
-                document.getElementById('order-id-display').textContent = `주문번호 #${order.orderId}`;
-                const sc = statusConfig[order.status] || statusConfig.PENDING_PAYMENT;
-                const badge = document.getElementById('status-badge');
-                badge.textContent = sc.label;
-                badge.className = `self-start px-5 py-2 rounded-full text-xs font-medium ${sc.color}`;
+            document.getElementById('order-id-display').textContent = `주문번호 #${order.orderId}`;
+            const sc = statusConfig[order.paymentStatus] || statusConfig.PENDING;
+            const badge = document.getElementById('status-badge');
+            badge.textContent = sc.label;
+            badge.className = `self-start px-5 py-2 rounded-full text-xs font-medium ${sc.color}`;
 
-                const orderDate = new Date(order.createdAt).toLocaleDateString('ko-KR', {
-                    year: 'numeric', month: 'long', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                });
-                document.getElementById('order-date').textContent = orderDate;
-                document.getElementById('order-name').textContent = order.orderName || '-';
-                document.getElementById('order-total').textContent = formatPrice(order.totalPrice) + '원';
+            const orderDate = new Date(order.createdAt).toLocaleDateString('ko-KR', {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            document.getElementById('order-date').textContent = orderDate;
+            document.getElementById('order-name').textContent = order.orderName || '-';
+            document.getElementById('order-total').textContent = formatPrice(order.totalPrice) + '원';
 
-                const tbody = document.getElementById('items-tbody');
-                tbody.innerHTML = (order.orderItems || []).map(item => `
+            const tbody = document.getElementById('items-tbody');
+            tbody.innerHTML = (order.orderItems || []).map(item => `
                     <tr class="border-t border-gray-100">
                         <td class="px-6 py-4 text-sm text-gray-900">${item.productName}</td>
                         <td class="px-6 py-4 text-sm text-right text-gray-600">${formatPrice(item.orderPrice)}원</td>
@@ -124,54 +129,63 @@
                     </tr>
                 `).join('');
 
-                document.getElementById('items-total').textContent = formatPrice(order.totalPrice) + '원';
+            document.getElementById('items-total').textContent = formatPrice(order.totalPrice) + '원';
 
-                const actionSection = document.getElementById('action-section');
-                let actions = `
+            const actionSection = document.getElementById('action-section');
+            let actions = `
                     <a href="/orders" class="px-8 py-4 border-2 border-black text-black text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-black hover:text-white transition-all">
                         주문내역으로 돌아가기
                     </a>`;
 
-                if (order.status === 'PENDING_PAYMENT') {
-                    actions += `
+            if (order.status === 'PENDING') {
+                actions += `
                         <span class="px-8 py-4 border-2 border-gray-200 text-gray-400 text-sm font-black text-center uppercase tracking-wide rounded-lg">
                             결제 미완료 주문
                         </span>`;
-                } else if (order.status === 'CONFIRMED') {
-                    actions += `
-                        <button onclick="cancelOrder('${order.paymentId}')" class="px-8 py-4 bg-red-600 text-white text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-red-700 transition-all">
+            } else if (order.paymentStatus === 'COMPLETED' || order.paymentStatus === 'PARTIAL_REFUND') {
+                actions += `
+                        <button onclick="cancelCurrentOrder()" class="px-8 py-4 bg-red-600 text-white text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-red-700 transition-all">
                             주문 취소
                         </button>`;
-                }
-
-                actionSection.innerHTML = actions;
-
-                document.getElementById('detail-loading').classList.add('hidden');
-                document.getElementById('detail-content').classList.remove('hidden');
-
-            } catch (e) {
-                document.getElementById('detail-loading').innerHTML =
-                    '<div class="text-center py-20"><i class="ri-error-warning-line text-5xl text-gray-300 mb-4"></i>' +
-                    '<p class="text-gray-500 mb-4">주문을 찾을 수 없습니다</p>' +
-                    '<a href="/orders" class="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-semibold">' +
-                    '<i class="ri-arrow-left-line"></i> 주문내역으로 돌아가기</a></div>';
             }
-        }
 
-        function cancelOrder(paymentId) {
-            showConfirm('이 주문을 취소하시겠습니까? 결제 금액이 환불됩니다.', async () => {
-                try {
-                    await apiFetch(`/api/payments/${paymentId}/cancel`, {
-                        method: 'POST',
-                        body: JSON.stringify({ reason: '사용자 요청 취소' })
-                    });
-                    showToast('주문이 취소되었습니다', 'success');
-                    loadOrderDetail();
-                } catch (e) {
-                    showToast('취소 실패: ' + e.message, 'danger');
-                }
-            });
+            actionSection.innerHTML = actions;
+
+            document.getElementById('detail-loading').classList.add('hidden');
+            document.getElementById('detail-content').classList.remove('hidden');
+
+        } catch (e) {
+            document.getElementById('detail-loading').innerHTML =
+                '<div class="text-center py-20"><i class="ri-error-warning-line text-5xl text-gray-300 mb-4"></i>' +
+                '<p class="text-gray-500 mb-4">주문을 찾을 수 없습니다</p>' +
+                '<a href="/orders" class="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-semibold">' +
+                '<i class="ri-arrow-left-line"></i> 주문내역으로 돌아가기</a></div>';
         }
-    </script>
+    }
+
+    function cancelCurrentOrder() {
+        if (!currentOrder) return;
+        const items = (currentOrder.orderItems || []).map(item => ({
+            orderItemId: item.orderItemId,
+            requestQuantity: item.quantity
+        }));
+        showConfirm('이 주문을 취소하시겠습니까? 결제 금액이 환불됩니다.', async () => {
+            try {
+                await apiFetch('/api/refunds', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        paymentId: currentOrder.paymentId,
+                        cancelReason: '사용자 요청 취소',
+                        items: items
+                    })
+                });
+                showToast('주문이 정상적으로 취소 및 환불되었습니다.', 'success');
+                loadOrderDetail();
+            } catch (e) {
+                showToast('취소 실패: ' + e.message, 'danger');
+            }
+        });
+    }
+</script>
 </body>
 </html>

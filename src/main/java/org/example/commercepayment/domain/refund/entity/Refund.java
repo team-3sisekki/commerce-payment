@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.commercepayment.domain.payment.entity.Payment;
 import org.example.commercepayment.global.entity.BaseTimeEntity;
 
 import java.util.ArrayList;
@@ -20,16 +21,9 @@ public class Refund extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO: 추후 Payment 객체 참조가 필요해지면 아래 주석을 풀고 기존 paymentId를 대체
-    /*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_id", nullable = false)
     private Payment payment;
-    */
-
-    // 임시: Payment 엔티티 부재로 인한 ID 값(Soft Reference) 매핑
-    @Column(name = "payment_id", nullable = false)
-    private Long paymentId;
 
     @Column(name = "cancel_reason", nullable = false)
     private String cancelReason;
@@ -50,9 +44,8 @@ public class Refund extends BaseTimeEntity {
 
     // 생성자 및 빌더는 private으로 캡슐화
     @Builder(access = AccessLevel.PRIVATE)
-    private Refund(Long paymentId, String cancelReason, int pointRefundAmount, int pgRefundAmount, RefundStatus status) {
-        // TODO: 객체 참조 변경 시 paymentId 파라미터를 Payment 객체로 변경
-        this.paymentId = paymentId;
+    private Refund(Payment payment, String cancelReason, int pointRefundAmount, int pgRefundAmount, RefundStatus status) {
+        this.payment = payment;
         this.cancelReason = cancelReason;
         this.pointRefundAmount = pointRefundAmount;
         this.pgRefundAmount = pgRefundAmount;
@@ -60,9 +53,9 @@ public class Refund extends BaseTimeEntity {
     }
 
     // 정적 팩토리 메서드를 통해서만 객체 생성
-    public static Refund create(Long paymentId, String cancelReason, int pointRefundAmount, int pgRefundAmount) {
+    public static Refund create(Payment payment, String cancelReason, int pointRefundAmount, int pgRefundAmount) {
         return Refund.builder()
-                .paymentId(paymentId)
+                .payment(payment)
                 .cancelReason(cancelReason)
                 .pointRefundAmount(pointRefundAmount)
                 .pgRefundAmount(pgRefundAmount)

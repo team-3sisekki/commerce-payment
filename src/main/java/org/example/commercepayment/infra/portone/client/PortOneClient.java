@@ -36,19 +36,20 @@ public class PortOneClient implements PaymentGateway {
         return new PaymentGatewayResponse(
                 response.id(),
                 response.status(),
-                response.amount().total()
+                response.amount().total(),
+                response.amount().cancelled()
         );
     }
 
     @Override
-    public void cancelPayment(String paymentId, String reason) {
+    public void cancelPayment(String paymentId, String reason, Integer amount) {
         // paymentId logging
-        log.info("PortOne 결제 취소 요청: paymentId={}, reason={}", paymentId, reason);
+        log.info("PortOne 결제 취소 요청: paymentId={}, reason={}, amount={}", paymentId, reason, amount);
 
         // portOneRestClient https://api.portone.io/payments/{paymnetId}/cancel body: {reason, storeId}
         portOneRestClient.post()
                 .uri("/payments/{paymentId}/cancel", paymentId)
-                .body(new PortOneCancelRequest(reason, portOneProperties.getStoreId()))
+                .body(new PortOneCancelRequest(amount, reason, portOneProperties.getStoreId()))
                 .retrieve()
                 .toBodilessEntity();
     }

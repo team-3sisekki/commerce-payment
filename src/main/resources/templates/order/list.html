@@ -4,67 +4,73 @@
     <th:block th:replace="~{layout/default :: head('주문내역')}" />
 </head>
 <body class="font-sans bg-white text-sf-black min-h-screen flex flex-col">
-    <th:block th:replace="~{layout/default :: header}" />
+<th:block th:replace="~{layout/default :: header}" />
 
-    <main class="flex-1">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8 py-16">
+<main class="flex-1">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-16">
 
-            <h1 class="text-5xl font-light text-gray-900 mb-12 tracking-widest uppercase letter-spacing-2">주문내역</h1>
+        <h1 class="text-5xl font-light text-gray-900 mb-12 tracking-widest uppercase letter-spacing-2">주문내역</h1>
 
-            <div id="orders-loading" class="text-center py-24">
-                <div class="spinner-dark mx-auto"></div>
-            </div>
-
-            <div id="orders-empty" class="hidden text-center py-32 animate-fade-in">
-                <div class="w-24 h-24 mx-auto mb-8 flex items-center justify-center">
-                    <i class="ri-file-list-3-line text-6xl text-gray-200"></i>
-                </div>
-                <h2 class="text-2xl font-light text-gray-900 mb-3 tracking-tight">주문 내역이 없습니다</h2>
-                <p class="text-sm text-gray-500 mb-10">쇼핑을 시작하고 첫 주문을 만들어보세요</p>
-                <a href="/" class="inline-block text-xs font-medium text-gray-900 border-b border-gray-400 hover:border-gray-900 pb-1 transition-all uppercase tracking-wider">
-                    쇼핑 계속하기
-                </a>
-            </div>
-
-            <div id="orders-content" class="hidden space-y-5"></div>
+        <div id="orders-loading" class="text-center py-24">
+            <div class="spinner-dark mx-auto"></div>
         </div>
-    </main>
 
-    <th:block th:replace="~{layout/default :: footer}" />
-    <th:block th:replace="~{layout/default :: scripts}" />
+        <div id="orders-empty" class="hidden text-center py-32 animate-fade-in">
+            <div class="w-24 h-24 mx-auto mb-8 flex items-center justify-center">
+                <i class="ri-file-list-3-line text-6xl text-gray-200"></i>
+            </div>
+            <h2 class="text-2xl font-light text-gray-900 mb-3 tracking-tight">주문 내역이 없습니다</h2>
+            <p class="text-sm text-gray-500 mb-10">쇼핑을 시작하고 첫 주문을 만들어보세요</p>
+            <a href="/" class="inline-block text-xs font-medium text-gray-900 border-b border-gray-400 hover:border-gray-900 pb-1 transition-all uppercase tracking-wider">
+                쇼핑 계속하기
+            </a>
+        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!requireAuth()) return;
-            loadOrders();
-        });
+        <div id="orders-content" class="hidden space-y-5"></div>
+    </div>
+</main>
 
-        const statusConfig = {
-            PENDING_PAYMENT: { label: '결제 대기', color: 'text-amber-600 bg-amber-50' },
-            CONFIRMED: { label: '주문 확정', color: 'text-emerald-600 bg-emerald-50' },
-            CANCELLED: { label: '취소됨', color: 'text-gray-600 bg-gray-100' }
-        };
+<th:block th:replace="~{layout/default :: footer}" />
+<th:block th:replace="~{layout/default :: scripts}" />
 
-        async function loadOrders() {
-            try {
-                const orders = await apiFetch('/api/orders');
-                document.getElementById('orders-loading').classList.add('hidden');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!requireAuth()) return;
+        loadOrders();
+    });
 
-                if (!orders || orders.length === 0) {
-                    document.getElementById('orders-empty').classList.remove('hidden');
-                    return;
-                }
+    // PaymentStatus enum(PENDING, COMPLETED, FAILED, CANCELLED, PARTIAL_REFUND, FULL_REFUND)에 맞춘 라벨/색상
+    let globalOrders = [];
+    const statusConfig = {
+        PENDING: { label: '결제 대기', color: 'text-amber-600 bg-amber-50' },
+        COMPLETED: { label: '주문 확정', color: 'text-emerald-600 bg-emerald-50' },
+        FAILED: { label: '결제 실패', color: 'text-red-600 bg-red-50' },
+        CANCELLED: { label: '취소됨', color: 'text-gray-600 bg-gray-100' },
+        PARTIAL_REFUND: { label: '부분 환불', color: 'text-blue-600 bg-blue-50' },
+        FULL_REFUND: { label: '전액 환불', color: 'text-gray-600 bg-gray-100' }
+    };
 
-                const container = document.getElementById('orders-content');
-                container.innerHTML = orders.map((order, index) => {
-                    const sc = statusConfig[order.status] || statusConfig.PENDING_PAYMENT;
-                    const orderDate = new Date(order.createdAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
+    async function loadOrders() {
+        try {
+            const orders = await apiFetch('/api/orders');
+            globalOrders = orders;
+            document.getElementById('orders-loading').classList.add('hidden');
 
-                    const itemsHtml = (order.orderItems || []).map(item => `
+            if (!orders || orders.length === 0) {
+                document.getElementById('orders-empty').classList.remove('hidden');
+                return;
+            }
+
+            const container = document.getElementById('orders-content');
+            container.innerHTML = orders.map((order, index) => {
+                const sc = statusConfig[order.paymentStatus] || statusConfig.PENDING;
+                const orderDate = new Date(order.createdAt).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                const itemsHtml = (order.orderItems || []).map(item => `
                         <tr class="border-t border-gray-100 text-sm">
                             <td class="py-4 pr-4 text-gray-900">${item.productName}</td>
                             <td class="py-4 pr-4 text-right text-gray-600">${item.quantity}</td>
@@ -72,14 +78,14 @@
                         </tr>
                     `).join('');
 
-                    let actionHtml = '';
-                    if (order.status === 'PENDING_PAYMENT') {
-                        actionHtml = `<span class="text-xs font-medium text-gray-400 uppercase tracking-wider">결제 미완료 주문</span>`;
-                    } else if (order.status === 'CONFIRMED') {
-                        actionHtml = `<button onclick="cancelOrder('${order.paymentId}')" class="text-xs font-medium text-red-600 hover:text-red-700 uppercase tracking-wider">주문 취소</button>`;
-                    }
+                let actionHtml = '';
+                if (order.status === 'PENDING') {
+                    actionHtml = `<span class="text-xs font-medium text-gray-400 uppercase tracking-wider">결제 미완료 주문</span>`;
+                } else if (order.status === 'COMPLETED') {
+                    actionHtml = `<button onclick="cancelOrder(${index})" class="text-xs font-medium text-red-600 hover:text-red-700 uppercase tracking-wider">주문 취소</button>`;
+                }
 
-                    return `
+                return `
                     <div class="border border-gray-200 overflow-hidden animate-fade-in" style="animation-delay: ${index * 0.05}s">
                         <div class="px-8 py-6 bg-white flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-200" onclick="toggleOrder(${index})">
                             <div class="flex-1 flex items-start gap-8">
@@ -121,37 +127,47 @@
                             </div>
                         </div>
                     </div>`;
-                }).join('');
+            }).join('');
 
-                container.classList.remove('hidden');
+            container.classList.remove('hidden');
 
+        } catch (e) {
+            document.getElementById('orders-loading').classList.add('hidden');
+            showToast('주문내역을 불러올 수 없습니다', 'danger');
+        }
+    }
+
+    function toggleOrder(index) {
+        const detail = document.getElementById('order-detail-' + index);
+        const arrow = document.getElementById('arrow-' + index);
+        detail.classList.toggle('hidden');
+        arrow.style.transform = detail.classList.contains('hidden') ? '' : 'rotate(180deg)';
+    }
+
+    function cancelOrder(index) {
+        const order = globalOrders[index];
+        if (!order) return;
+        const items = (order.orderItems || []).map(item => ({
+            orderItemId: item.orderItemId,
+            requestQuantity: item.quantity
+        }));
+        showConfirm('이 주문을 취소하시겠습니까? 결제 금액이 환불됩니다.', async () => {
+            try {
+                await apiFetch('/api/refunds', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        paymentId: order.paymentId,
+                        cancelReason: '사용자 요청 취소',
+                        items: items
+                    })
+                });
+                showToast('주문이 정상적으로 취소 및 환불되었습니다.', 'success');
+                loadOrders();
             } catch (e) {
-                document.getElementById('orders-loading').classList.add('hidden');
-                showToast('주문내역을 불러올 수 없습니다', 'danger');
+                showToast('취소 실패: ' + e.message, 'danger');
             }
-        }
-
-        function toggleOrder(index) {
-            const detail = document.getElementById('order-detail-' + index);
-            const arrow = document.getElementById('arrow-' + index);
-            detail.classList.toggle('hidden');
-            arrow.style.transform = detail.classList.contains('hidden') ? '' : 'rotate(180deg)';
-        }
-
-        function cancelOrder(paymentId) {
-            showConfirm('이 주문을 취소하시겠습니까? 결제 금액이 환불됩니다.', async () => {
-                try {
-                    await apiFetch(`/api/payments/${paymentId}/cancel`, {
-                        method: 'POST',
-                        body: JSON.stringify({ reason: '사용자 요청 취소' })
-                    });
-                    showToast('주문이 취소되었습니다', 'success');
-                    loadOrders();
-                } catch (e) {
-                    showToast('취소 실패: ' + e.message, 'danger');
-                }
-            });
-        }
-    </script>
+        });
+    }
+</script>
 </body>
 </html>

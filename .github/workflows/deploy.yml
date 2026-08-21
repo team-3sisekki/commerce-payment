@@ -64,13 +64,14 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          PORTONE_API_KEY: ${{ secrets.PORTONE_API_KEY }}
           PORTONE_API_SECRET: ${{ secrets.PORTONE_API_SECRET }}
+          PORTONE_STORE_ID: ${{ secrets.PORTONE_STORE_ID }}
+          PORTONE_CHANNEL_KEY: ${{ secrets.PORTONE_CHANNEL_KEY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_USERNAME, DOCKER_REPO_NAME, SHORT_SHA, DB_URL, DB_USERNAME, DB_PASSWORD, PORTONE_API_KEY, PORTONE_API_SECRET
+          envs: DOCKER_USERNAME, DOCKER_REPO_NAME, SHORT_SHA, DB_URL, DB_USERNAME, DB_PASSWORD, PORTONE_API_SECRET, PORTONE_STORE_ID, PORTONE_CHANNEL_KEY
           script: |
             # 1. 시스템 업데이트 및 도커 설치 (Amazon Linux 2023 기준)
             sudo dnf update -y
@@ -92,8 +93,9 @@ jobs:
               -e DB_URL=$DB_URL \
               -e DB_USERNAME=$DB_USERNAME \
               -e DB_PASSWORD=$DB_PASSWORD \
-              -e PORTONE_API_KEY=$PORTONE_API_KEY \
               -e PORTONE_API_SECRET=$PORTONE_API_SECRET \
+              -e PORTONE_STORE_ID=$PORTONE_STORE_ID \
+              -e PORTONE_CHANNEL_KEY=$PORTONE_CHANNEL_KEY \
               $DOCKER_IMAGE
             
             # 5. 사용하지 않는 도커 이미지 청소

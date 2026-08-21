@@ -1,0 +1,278 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-5e6f-4789-9abc-def012345678",
+		"name": "commerce-payment (product/cart)",
+		"description": "product, cart 도메인 수동 테스트용 컬렉션. src/test/http/product.http, cart.http 를 기반으로 구성.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "로그인 (토큰 발급)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.environment.set(\"authToken\", res.data.token);",
+									"pm.test(\"로그인 성공 및 토큰 저장\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.data.token).to.be.a(\"string\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"yoshi@test.com\",\n  \"password\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Product",
+			"item": [
+				{
+					"name": "상품 목록 조회",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products?page=1&size=20&sort=LATEST",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products"],
+							"query": [
+								{ "key": "category", "value": "", "disabled": true },
+								{ "key": "minPrice", "value": "", "disabled": true },
+								{ "key": "maxPrice", "value": "", "disabled": true },
+								{ "key": "salesStatus", "value": "", "disabled": true },
+								{ "key": "isSoldOut", "value": "", "disabled": true },
+								{ "key": "page", "value": "1" },
+								{ "key": "size", "value": "20" },
+								{ "key": "sort", "value": "LATEST" }
+							]
+						}
+					}
+				},
+				{
+					"name": "상품 상세 조회",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/{{productId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "{{productId}}"]
+						}
+					}
+				},
+				{
+					"name": "TC. 존재하지 않는 상품 조회 (404 기대)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/999",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "999"]
+						}
+					}
+				},
+				{
+					"name": "TC. 잘못된 요청 형식 (400 기대)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/abc",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "abc"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Cart",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{authToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "장바구니 조회",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart"]
+						}
+					}
+				},
+				{
+					"name": "장바구니 아이템 추가",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const res = pm.response.json();",
+									"    if (res.data && res.data.cartItemId) {",
+									"        pm.environment.set(\"cartItemId\", res.data.cartItemId);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": {{productId}},\n  \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "items"]
+						}
+					}
+				},
+				{
+					"name": "TC. 단종 상품 담기 (409 PRODUCT_NOT_ON_SALE 기대)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": 6,\n  \"quantity\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "items"]
+						}
+					}
+				},
+				{
+					"name": "장바구니 수량 변경",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "items", "{{cartItemId}}"]
+						}
+					}
+				},
+				{
+					"name": "TC. 수량 변경 (잘못된 값, 400 기대)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "items", "{{cartItemId}}"]
+						}
+					}
+				},
+				{
+					"name": "장바구니 아이템 삭제",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "items", "{{cartItemId}}"]
+						}
+					}
+				},
+				{
+					"name": "TC. 존재하지 않는 항목 삭제 (404 기대)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items/999",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "items", "999"]
+						}
+					}
+				},
+				{
+					"name": "장바구니 전체 비우기",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
