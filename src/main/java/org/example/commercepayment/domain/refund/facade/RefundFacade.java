@@ -30,17 +30,17 @@ public class RefundFacade {
         /*PG 선검증*/
         // 1. 결제 단건 조회
         Payment payment = paymentService.findByIdWithOrder(request.paymentId());
-        
+
         // 2. PG사 결제 내역 조회 및 상태 검증 (단, PG 결제액이 0원인 전액 포인트 결제는 스킵)
         if (payment.getPgAmount() > 0) {
             PaymentGatewayResponse pgResponse = paymentGateway.getPayment(payment.getPortonePaymentId());
-            
+
             // 3. 환불액 정합성 검증 (DB 잔액 vs PG 잔액)
             int pgRemainingAmount = pgResponse.totalAmount() - pgResponse.cancelledAmount();
             log.info("PG 환불 잔액 = {}", pgRemainingAmount);
             int dbRemainingAmount = payment.getPgAmount() - refundService.getRefundedPgAmount(payment.getId());
             log.info("DB 환불 잔액 = {}", dbRemainingAmount);
-            
+
             if (pgRemainingAmount != dbRemainingAmount) {
                 throw new BusinessException(ErrorCode.REFUND_AMOUNT_MISMATCH);
             }
@@ -57,9 +57,9 @@ public class RefundFacade {
         } else {
             try {
                 paymentGateway.cancelPayment(
-                    payment.getPortonePaymentId(), 
-                    request.cancelReason(), 
-                    savedRefund.getPgRefundAmount()
+                        payment.getPortonePaymentId(),
+                        request.cancelReason(),
+                        savedRefund.getPgRefundAmount()
                 );
                 isPgSuccess = true;
                 log.info("PG사 환불 통신 성공. Refund ID: {}", savedRefund.getId());
@@ -71,5 +71,18 @@ public class RefundFacade {
         // 6. 결과 갱신
         refundService.updateRefundResult(savedRefund.getId(), isPgSuccess);
         return RefundResponse.from(savedRefund);
+    }
+
+    public void syncCancelFromPg(String portonePaymentId, String reason) {
+        log.info("========== [웹훅 취소 동기화 진입] ========== portonePaymentId={}", portonePaymentId);
+
+        Payment payment = paymentService.findByPortonePaymentId(portonePaymentId);
+
+        Refund savedRefund = refundService.calculateAndSaveFullRefundForSync(payment.getId(), reason);
+
+        // PG 재호출 없이 바로 성공 처리 (이미 PG쪽 취소는 완료된 상태)
+        refundService.updateRefundResult(savedRefund.getId(), true);
+
+        log.info("웹훅 취소 동기화 완료. Refund ID: {}", savedRefund.getId());
     }
 }

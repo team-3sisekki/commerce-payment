@@ -105,7 +105,7 @@ public class RefundService {
 
         /* 결제 상태(완료/부분환불) 확인*/
         if (payment.getStatus() != PaymentStatus.COMPLETED
-            && payment.getStatus() != PaymentStatus.PARTIAL_REFUND) {
+                && payment.getStatus() != PaymentStatus.PARTIAL_REFUND) {
             throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
         }
 
@@ -135,8 +135,8 @@ public class RefundService {
 
         // 4. '총 상품 개수' - '현재 남은 환불 가능 개수' 로 전액/마지막 환불인지 부분환불 인지 분개처리
         int totalRequestedQuantity = request.items().stream()
-                                    .mapToInt(RefundItemRequest::requestQuantity)
-                                    .sum();
+                .mapToInt(RefundItemRequest::requestQuantity)
+                .sum();
 
         int totalOriginalPaymentQuantity = payment.getOrder().getTotalQuantity();
         int totalRefundedPaymentQuantity = refundItemRepository.sumRefundedQuantityByPaymentId(request.paymentId());
@@ -193,7 +193,6 @@ public class RefundService {
         return savedRefund;
     }
 
-
     /**
      * 재고 복구 처리
      */
@@ -224,9 +223,38 @@ public class RefundService {
             refund.changeStatus(RefundStatus.FAILED);
             // 실패 시 에러 로그 기록 (재시도 및 수동 보정 대상 표식)
             log.error("[CRITICAL: 수동 보정 요망] PG사 환불 통신 실패! " +
-                      "DB 상태(재고, 결제)는 환불 처리되었으나 실제 PG 환불이 누락되었습니다. " +
-                      "포트원 관리자 센터에서 수동 취소가 필요합니다. -> Refund ID: {}, Payment ID: {}, PG환불요청액: {}", 
-                      refund.getId(), refund.getPayment().getId(), refund.getPgRefundAmount());
+                            "DB 상태(재고, 결제)는 환불 처리되었으나 실제 PG 환불이 누락되었습니다. " +
+                            "포트원 관리자 센터에서 수동 취소가 필요합니다. -> Refund ID: {}, Payment ID: {}, PG환불요청액: {}",
+                    refund.getId(), refund.getPayment().getId(), refund.getPgRefundAmount());
         }
+    }
+    
+    @Transactional
+    public Refund calculateAndSaveFullRefundForSync(Long paymentId, String reason) {
+        Payment payment = paymentService.findForRefund(paymentId);
+        Long memberId = payment.getOrder().getMemberId();
+
+        RefundRequest fullRequest = buildFullRefundRequest(payment, reason);
+        return calculateAndSaveRefund(memberId, fullRequest);
+    }
+
+    private RefundRequest buildFullRefundRequest(Payment payment, String reason) {
+        List<Long> itemIds = payment.getOrder().getOrderItems().stream()
+                .map(OrderItem::getId)
+                .toList();
+
+        Map<Long, Long> refundedMap = refundItemRepository.findRefundedQuantitiesByOrderItemIds(itemIds).stream()
+                .collect(toMap(RefundedQuantityDto::orderItemId, RefundedQuantityDto::refundedQuantity));
+
+        List<RefundItemRequest> items = payment.getOrder().getOrderItems().stream()
+                .map(orderItem -> {
+                    int refunded = refundedMap.getOrDefault(orderItem.getId(), 0L).intValue();
+                    int remaining = orderItem.getQuantity() - refunded;
+                    return remaining > 0 ? new RefundItemRequest(orderItem.getId(), remaining) : null;
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return new RefundRequest(payment.getId(), reason, items);
     }
 }
