@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.commercepayment.domain.order.entity.OrderStatus;
 import org.example.commercepayment.domain.payment.entity.PaymentStatus;
+import org.example.commercepayment.domain.refund.dto.RefundHistoryResponse;
 import org.example.commercepayment.domain.refund.dto.RefundRequest;
 import org.example.commercepayment.domain.refund.dto.RefundRequest.RefundItemRequest;
 import org.example.commercepayment.domain.refund.dto.RefundedQuantityDto;
@@ -42,10 +43,7 @@ public class RefundService {
     @Transactional(readOnly = true)
     public List<RefundableItemResponse> getRefundableItems(Long memberId, Long paymentId) {
         Payment payment = paymentService.findByIdWithOrderAndItems(paymentId);
-        
-        if (!payment.getOrder().getMemberId().equals(memberId)) {
-            throw new BusinessException(ErrorCode.REFUND_ACCESS_DENIED);
-        }
+        validatePaymentOwnership(payment, memberId);
 
         Map<Long, Integer> remainQuantities = calculateRemainQuantities(payment.getOrder().getOrderItems());
 
@@ -83,6 +81,20 @@ public class RefundService {
     }
 
     /**
+     * 환불 내역 조회 (영수증용)
+     */
+    @Transactional(readOnly = true)
+    public List<org.example.commercepayment.domain.refund.dto.RefundHistoryResponse> getRefundHistory(Long memberId, Long paymentId) {
+        Payment payment = paymentService.findByIdWithOrder(paymentId);
+        validatePaymentOwnership(payment, memberId);
+
+        List<Refund> refunds = refundRepository.findByPaymentIdWithItems(paymentId);
+        return refunds.stream()
+                .map(RefundHistoryResponse::from)
+                .toList();
+    }
+
+    /**
      * 선검증 및 DB 갱신
      */
     @Transactional
@@ -98,10 +110,8 @@ public class RefundService {
             throw new BusinessException(ErrorCode.DUPLICATE_REFUND_REQUEST);
         }
 
-        /* 본인 소유 주문 여부 확인*/
-        if (!payment.getOrder().getMemberId().equals(memberId)) {
-            throw new BusinessException(ErrorCode.REFUND_ACCESS_DENIED);
-        }
+        /* 본인 소유 주문 여부 확인 */
+        validatePaymentOwnership(payment, memberId);
 
         /* 결제 상태(완료/부분환불) 확인*/
         if (payment.getStatus() != PaymentStatus.COMPLETED
@@ -181,6 +191,7 @@ public class RefundService {
                 .cancelReason(request.cancelReason())
                 .pointRefundAmount(calcResult.totalPointRefundAmount())
                 .pgRefundAmount(calcResult.totalPgRefundAmount())
+                .pointRecoveryAmount(calcResult.pointRecoveryAmount())
                 .build();
 
         Refund savedRefund = refundRepository.save(refund);
@@ -191,6 +202,15 @@ public class RefundService {
         }
 
         return savedRefund;
+    }
+
+    /**
+     * 본인 소유 결제 건인지 검증
+     */
+    private void validatePaymentOwnership(Payment payment, Long memberId) {
+        if (!payment.getOrder().getMemberId().equals(memberId)) {
+            throw new BusinessException(ErrorCode.REFUND_ACCESS_DENIED);
+        }
     }
 
     /**

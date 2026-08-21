@@ -29,7 +29,7 @@ public record OrderResponse(
                 order.getTotalAmount(),
                 order.getUsedPoint(),
                 payment.getPgAmount(),
-                payment.getPointUsedAmount(),
+                payment.getEarnedPointAmount(),
                 order.getStatus().name(),
                 payment.getStatus().name(),
                 order.getOrderName(),

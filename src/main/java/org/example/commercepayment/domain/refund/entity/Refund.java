@@ -34,6 +34,9 @@ public class Refund extends BaseTimeEntity {
     @Column(name = "pg_refund_amount", nullable = false)
     private int pgRefundAmount;
 
+    @Column(name = "point_recovery_amount", nullable = false)
+    private int pointRecoveryAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private RefundStatus status;
@@ -44,11 +47,12 @@ public class Refund extends BaseTimeEntity {
 
     // 빌더 패턴 적용
     @Builder
-    private Refund(Payment payment, String cancelReason, int pointRefundAmount, int pgRefundAmount) {
+    private Refund(Payment payment, String cancelReason, int pointRefundAmount, int pgRefundAmount, int pointRecoveryAmount) {
         this.payment = payment;
         this.cancelReason = cancelReason;
         this.pointRefundAmount = pointRefundAmount;
         this.pgRefundAmount = pgRefundAmount;
+        this.pointRecoveryAmount = pointRecoveryAmount;
         this.status = RefundStatus.COMPLETED; // 기본 생성 상태값
     }
 
