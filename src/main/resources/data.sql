@@ -43,11 +43,11 @@ VALUES ('poor@test.com',
 -- 잔액만 넣고 원장을 비워두면 정합성 검증이 시작부터 실패한다.
 -- payment_id 는 결제와 무관한 초기 지급이므로 NULL.
 
-INSERT INTO point_transactions (member_id, payment_id, transaction_type, amount, balance_after, created_at, updated_at)
-VALUES (1, NULL, 'ACCRUE', 50000, 50000, NOW(), NOW());
+INSERT INTO points (member_id, payment_id, transaction_type, amount, created_at, updated_at)
+VALUES (1, NULL, 'EARN', 50000, NOW(), NOW());
 
-INSERT INTO point_transactions (member_id, payment_id, transaction_type, amount, balance_after, created_at, updated_at)
-VALUES (3, NULL, 'ACCRUE', 1000, 1000, NOW(), NOW());
+INSERT INTO points (member_id, payment_id, transaction_type, amount, created_at, updated_at)
+VALUES (3, NULL, 'EARN', 1000, NOW(), NOW());
 -- id=2 는 잔액 0 이라 원장도 없음 (0 == 0 으로 불변식 성립)
 
 
@@ -55,9 +55,9 @@ VALUES (3, NULL, 'ACCRUE', 1000, 1000, NOW(), NOW());
 -- 컬럼명 주의: stock 이 아니라 stock_quantity
 -- category, sales_status 는 NOT NULL 이라 반드시 값이 필요하다
 INSERT INTO products (name, price, stock_quantity, description, category, sales_status, created_at, updated_at) VALUES
-    ('사과',        3000, 100, '맛있는 사과입니다',                   '식품', 'ON_SALE',      NOW(), NOW()),  -- id=1
-    ('바나나',      5000,  50, '노란 바나나입니다',                   '식품', 'ON_SALE',      NOW(), NOW()),  -- id=2
-    ('한정판 굿즈', 20000,   3, '재고 부족 롤백 테스트용 (재고 3개)',  '잡화', 'ON_SALE',      NOW(), NOW()),  -- id=3
+    ('사과',        300, 100, '맛있는 사과입니다',                   '식품', 'ON_SALE',      NOW(), NOW()),  -- id=1
+    ('바나나',      500,  50, '노란 바나나입니다',                   '식품', 'ON_SALE',      NOW(), NOW()),  -- id=2
+    ('한정판 굿즈', 2000,   3, '재고 부족 롤백 테스트용 (재고 3개)',  '잡화', 'ON_SALE',      NOW(), NOW()),  -- id=3
     ('품절상품',    10000,   0, '품절 노출 정책 테스트용 (재고 0)',    '잡화', 'ON_SALE',      NOW(), NOW()),  -- id=4
     ('9천원상품',    9000, 100, '포인트 전액결제 테스트용',            '식품', 'ON_SALE',      NOW(), NOW()),  -- id=5
     ('단종상품',     7000,  10, '단종 필터 테스트용',                 '잡화', 'DISCONTINUED', NOW(), NOW());  -- id=6
