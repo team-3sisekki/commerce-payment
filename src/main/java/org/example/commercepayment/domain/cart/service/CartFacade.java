@@ -28,9 +28,13 @@ public class CartFacade {
 
         // 회원의 장바구니를 찾거나 없으면 새로 생성합니다.
         Cart cart = cartRepository.findByMemberId(member.getId())
-                .orElseGet(() -> cartRepository.save(new Cart(member)));
+                .orElseGet(() -> cartRepository.save(Cart.builder().member(member).build()));
 
-        CartItem cartItem = new CartItem(cart, product, request.quantity());
+        CartItem cartItem = CartItem.builder()
+                .cart(cart)
+                .product(product)
+                .quantity(request.quantity())
+                .build();
         return cartService.addItem(cartItem);
     }
 }

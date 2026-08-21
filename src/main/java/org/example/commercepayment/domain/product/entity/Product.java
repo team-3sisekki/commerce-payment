@@ -2,6 +2,7 @@ package org.example.commercepayment.domain.product.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.commercepayment.global.entity.BaseTimeEntity;
@@ -38,7 +39,8 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false, length = 30)
     private String salesStatus;
 
-    public Product(String name, int price, int stock, String description, String category, String salesStatus) {
+    @Builder
+    private Product(String name, int price, int stock, String description, String category, String salesStatus) {
         if (price < 0) {
             throw new BusinessException(ErrorCode.INVALID_PRICE);
         }

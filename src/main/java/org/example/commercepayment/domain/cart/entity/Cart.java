@@ -2,6 +2,7 @@ package org.example.commercepayment.domain.cart.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.commercepayment.domain.member.entity.Member;
@@ -22,7 +23,8 @@ public class Cart extends BaseTimeEntity {
     @JoinColumn(name = "member_id", nullable = false, unique = true)
     private Member member;
 
-    public Cart(Member member) {
+    @Builder
+    private Cart(Member member) {
         this.member = member;
     }
 }
