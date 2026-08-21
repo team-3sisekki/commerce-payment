@@ -46,6 +46,11 @@ public class PaymentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 
+    public Payment findForRefund(Long paymentId) {
+        return paymentRepository.findByIdForRefund(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
     public Payment findByPortonePaymentId(String portonePaymentId) {
         return paymentRepository.findByPortonePaymentId(portonePaymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
