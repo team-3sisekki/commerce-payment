@@ -2,6 +2,7 @@ package org.example.commercepayment.domain.order.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.commercepayment.domain.product.entity.Product;
@@ -39,7 +40,8 @@ public class OrderItem extends BaseTimeEntity {
     @Column(nullable = false)
     private int quantity;
 
-    public OrderItem(Product product, int orderPrice, int quantity) {
+    @Builder
+    private OrderItem(Product product, int orderPrice, int quantity) {
         this.product = product;
         this.productName = product.getName();   // 여기서 이름을 복사해 스냅샷으로 굳힌다
         this.orderPrice = orderPrice;

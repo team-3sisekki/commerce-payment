@@ -2,6 +2,7 @@ package org.example.commercepayment.domain.order.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.commercepayment.domain.member.entity.Member;
@@ -50,7 +51,8 @@ public class Order extends BaseTimeEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    public Order(Member member, List<OrderItem> orderItems, int usedPoint) {
+    @Builder
+    private Order(Member member, List<OrderItem> orderItems, int usedPoint) {
         if (orderItems == null || orderItems.isEmpty()) {
             throw new BusinessException(ErrorCode.CART_EMPTY);
         }

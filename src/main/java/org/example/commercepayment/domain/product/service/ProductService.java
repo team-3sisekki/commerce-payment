@@ -15,8 +15,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -44,45 +42,16 @@ public class ProductService {
                 request.salesStatus(), request.isSoldOut(), pageable
         );
 
-        // 4. 엔티티를 DTO로 변환
-        List<ProductResponse> data = productPage.getContent().stream()
-                .map(this::toResponse)
-                .toList();
-
-        // 5. 페이지 메타데이터 생성
-        ProductPageResponse.PageInfo pageInfo = new ProductPageResponse.PageInfo(
-                request.page(), request.size(), productPage.getTotalElements(), productPage.getTotalPages()
-        );
-
-        return new ProductPageResponse(data, pageInfo);
+        return ProductPageResponse.of(productPage, request.page(), request.size());
     }
 
-//    public List<ProductResponse> findAll() {
-//        return productRepository.findAll().stream()
-//                .map(this::toResponse)
-//                .toList();
-//    }
-
     public ProductResponse findById(Long id) {
-        Product product = findProductEntity(id);
-        return toResponse(product);
+        return ProductResponse.from(findProductEntity(id));
     }
 
     public Product findProductEntity(Long id) {
         return productRepository.findById(id).orElseThrow(
                 () -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND)
-        );
-    }
-
-    private ProductResponse toResponse(Product product) {
-        return new ProductResponse(
-                product.getId(),
-                product.getName(),
-                product.getPrice(),
-                product.getStock(),
-                product.getDescription(),
-                product.getCategory(),          // 추가
-                product.getSalesStatus()        // 추가
         );
     }
 
