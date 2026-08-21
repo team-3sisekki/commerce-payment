@@ -3,6 +3,7 @@ package org.example.commercepayment.domain.cart.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.commercepayment.domain.member.entity.Member;
@@ -35,7 +36,8 @@ public class CartItem extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "int UNSIGNED DEFAULT 1")
     private int quantity;
 
-    public CartItem(Cart cart, Product product, int quantity) {
+    @Builder
+    private CartItem(Cart cart, Product product, int quantity) {
         this.cart = cart;
         this.product = product;
         if (quantity < 1) {
