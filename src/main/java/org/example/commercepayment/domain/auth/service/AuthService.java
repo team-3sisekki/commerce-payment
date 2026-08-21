@@ -29,12 +29,12 @@ public class AuthService {
 
         String encodePassword = passwordEncoder.encode(request.password());
 
-        Member member = new Member(
-                request.email(),
-                encodePassword,
-                request.name(),
-                request.phoneNumber()
-        );
+        Member member = Member.builder()
+                .email(request.email())
+                .password(encodePassword)
+                .name(request.name())
+                .phoneNumber(request.phoneNumber())
+                .build();
 
         memberRepository.save(member);
     }
