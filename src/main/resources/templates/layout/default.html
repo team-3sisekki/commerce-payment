@@ -86,6 +86,10 @@
                             <div class="px-4 py-3 border-b border-gray-100">
                                 <p class="text-sm font-semibold text-sf-black" id="user-name">사용자</p>
                                 <p class="text-xs text-gray-500 mt-0.5" id="user-email">email</p>
+                                <div class="mt-2 pt-2 border-t border-gray-50 flex items-center justify-between">
+                                    <span class="text-xs text-gray-500">보유 포인트</span>
+                                    <span class="text-xs font-bold text-sf-accent"><span id="user-points">0</span> P</span>
+                                </div>
                             </div>
                             <a href="/orders" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-sf-cream transition-colors">
                                 <i class="ri-file-list-3-line text-gray-400"></i> 주문내역
@@ -230,8 +234,24 @@
             return true;
         }
 
-        function toggleUserDropdown() {
-            document.getElementById('user-menu').classList.toggle('hidden');
+        async function toggleUserDropdown() {
+            const menu = document.getElementById('user-menu');
+            const isHidden = menu.classList.contains('hidden');
+            
+            // 1. 메뉴를 클릭하자마자 바로 열거나 닫음 (UI 즉각 반응)
+            menu.classList.toggle('hidden');
+            
+            // 2. 메뉴가 열리는 타이밍이라면, 백그라운드에서 포인트를 조회하여 렌더링
+            if (isHidden && isLoggedIn()) {
+                try {
+                    const pointRes = await apiFetch('/api/points/balance');
+                    if (pointRes && pointRes.balance !== undefined) {
+                        document.getElementById('user-points').textContent = formatPrice(pointRes.balance);
+                    }
+                } catch (e) {
+                    console.error('포인트 조회 실패:', e);
+                }
+            }
         }
 
         function toggleMobileMenu() {
