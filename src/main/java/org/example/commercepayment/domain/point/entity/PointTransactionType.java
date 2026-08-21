@@ -2,6 +2,8 @@ package org.example.commercepayment.domain.point.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.commercepayment.global.error.BusinessException;
+import org.example.commercepayment.global.error.ErrorCode;
 
 // 포인트 거래 타입. 값 이름은 DDL의 transaction_type 컬럼 주석과 일치시킨다.
 // 각 타입이 부호(+/-)를 갖고 있어 서비스에서 부호 실수를 막는다.
@@ -20,7 +22,7 @@ public enum PointTransactionType {
     // 양수 금액을 타입에 맞는 부호로 변환. USE.applySign(3000) = -3000
     public int applySign(int positiveAmount) {
         if (positiveAmount <= 0) {
-            throw new IllegalArgumentException("거래 금액은 0보다 커야 합니다. amount=" + positiveAmount);
+            throw new BusinessException(ErrorCode.INVALID_POINT_AMOUNT, "amount=" + positiveAmount);
         }
         return sign * positiveAmount;
     }
