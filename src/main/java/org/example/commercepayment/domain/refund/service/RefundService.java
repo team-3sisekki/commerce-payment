@@ -13,12 +13,15 @@ import org.example.commercepayment.domain.refund.entity.RefundStatus;
 import org.example.commercepayment.domain.refund.repository.RefundItemRepository;
 import org.example.commercepayment.domain.refund.repository.RefundRepository;
 import org.example.commercepayment.domain.order.entity.OrderItem;
-import org.example.commercepayment.domain.order.repository.OrderItemRepository;
 import org.example.commercepayment.domain.payment.entity.Payment;
-import org.example.commercepayment.domain.payment.repository.PaymentRepository;
+import org.example.commercepayment.domain.payment.service.PaymentService;
 import org.example.commercepayment.domain.point.service.PointService;
+import org.example.commercepayment.global.error.BusinessException;
+import org.example.commercepayment.global.error.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.*;
 import static java.util.stream.Collectors.toMap;
 
@@ -27,12 +30,10 @@ import static java.util.stream.Collectors.toMap;
 @RequiredArgsConstructor
 public class RefundService {
 
+    private final PointService pointService;
+    private final PaymentService paymentService;
     private final RefundRepository refundRepository;
     private final RefundItemRepository refundItemRepository;
-    private final org.example.commercepayment.domain.point.repository.PointTransactionRepository pointTransactionRepository;
-    private final PaymentRepository paymentRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final PointService pointService;
 
     /**
      * 선검증 및 DB 갱신
@@ -41,19 +42,24 @@ public class RefundService {
     public Refund calculateAndSaveRefund(Long memberId, RefundRequest request) {
         log.info("========== [환불 처리 시작] ==========");
         log.info("요청 정보: 결제ID={}, 회원ID={}, 환불상품갯수={}", request.paymentId(), memberId, request.items().size());
-        
-        Payment payment = paymentRepository.findById(request.paymentId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 결제 건입니다."));
+
+        // 조회 쿼리에 락 설정
+        Payment payment = paymentService.findForRefund(request.paymentId());
+
+        // 5초 이내에 동일한 결제건으로 환불된 내역이 있는지 확인
+        if (refundRepository.existsByPaymentIdAndCreatedAtAfter(request.paymentId(), LocalDateTime.now().minusSeconds(5))) {
+            throw new BusinessException(ErrorCode.DUPLICATE_REFUND_REQUEST);
+        }
 
         /* 본인 소유 주문 여부 확인*/
         if (!payment.getOrder().getMemberId().equals(memberId)) {
-            throw new IllegalArgumentException("본인의 결제 건만 환불할 수 있습니다.");
+            throw new BusinessException(ErrorCode.REFUND_ACCESS_DENIED);
         }
 
         /* 결제 상태(완료/부분환불) 확인*/
         if (payment.getStatus() != PaymentStatus.COMPLETED
             && payment.getStatus() != PaymentStatus.PARTIAL_REFUND) {
-            throw new IllegalArgumentException("환불 가능한 결제 상태가 아닙니다.");
+            throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
         }
 
         /* 환불 대상 상품의 잔여 환불 가능 수량 초과 여부 확인*/
@@ -64,7 +70,8 @@ public class RefundService {
                             .toList();
 
         // 2-1) 환불하려는 모든 상품의 '원본 정보(최초 주문 수량 등)'를 한 번에 조회 >  찾기 쉽게 Map(사전) 형태로 변경 (상품ID:상품 정보)
-        Map<Long, OrderItem> orderItemMap = orderItemRepository.findAllById(itemIds).stream()
+        Map<Long, OrderItem> orderItemMap = payment.getOrder().getOrderItems().stream()
+                                            .filter(item -> itemIds.contains(item.getId()))
                                             .collect(toMap(OrderItem::getId, item -> item));
 
         // 2-2) 환불하려는 모든 상품의 '지금까지 이미 환불된 누적 수량'을 한 번에 조회 > 찾기 쉽게 Map 형태로 변경 (상품ID:누적 환불 수량)
@@ -78,7 +85,7 @@ public class RefundService {
         for (RefundItemRequest item : request.items()) {
             OrderItem orderItem = orderItemMap.get(item.orderItemId());
             if (orderItem == null) {
-                throw new IllegalArgumentException("상품 ID " + item.orderItemId() + "는 존재하지 않는 주문 상품입니다.");
+                throw new BusinessException(ErrorCode.REFUND_ITEM_NOT_FOUND);
             }
 
             // 최초에 주문했던 수량
@@ -90,11 +97,11 @@ public class RefundService {
 
             // 이번에 환불해달라고 요청한 수량이, 남은 수량보다 많으면 에러
             if (item.requestQuantity() > remainingQuantity) {
-                throw new IllegalArgumentException("상품 ID " + item.orderItemId() + "의 잔여 환불 가능 수량을 초과했습니다.");
+                throw new BusinessException(ErrorCode.EXCEED_REFUNDABLE_QUANTITY);
             }
         }
 
-        // TODO: 동일 환불에 대한 중복 요청 여부 확인
+
 
         // 이번에 사용자가 환불해 달라고 요청한 *'총 상품 개수'*
         int totalRequestedQuantity = request.items().stream()
@@ -271,7 +278,7 @@ public class RefundService {
     public void updateRefundResult(Long refundId, boolean isPgSuccess) {
         // [Step 8] 결과 갱신
         Refund refund = refundRepository.findById(refundId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환불 건입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.REFUND_NOT_FOUND));
 
         if (!isPgSuccess) {
             refund.changeStatus(RefundStatus.FAILED);

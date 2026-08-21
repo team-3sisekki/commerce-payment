@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import org.example.commercepayment.domain.order.entity.OrderItem;
 import org.example.commercepayment.global.entity.BaseTimeEntity;
 
+import org.example.commercepayment.global.error.BusinessException;
+import org.example.commercepayment.global.error.ErrorCode;
+
 @Entity
 @Getter
 @Table(name = "refund_items")
@@ -47,7 +50,7 @@ public class RefundItem extends BaseTimeEntity {
     // 정적 팩토리 메서드를 통해서만 객체 생성
     public static RefundItem create(OrderItem orderItem, int refundQuantity, int pointRefundAmount, int pgRefundAmount) {
         if (refundQuantity <= 0) {
-            throw new IllegalArgumentException("환불 수량은 1개 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_QUANTITY);
         }
         
         return RefundItem.builder()

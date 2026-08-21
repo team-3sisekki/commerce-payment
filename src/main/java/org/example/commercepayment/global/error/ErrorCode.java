@@ -62,9 +62,14 @@ public enum ErrorCode {
     // 멤버 에러
     NOT_FOUND_MEMBER(HttpStatus.NOT_FOUND, "MEMBER_001", "회원을 찾지 못했습니다."),
 
-
-
-
+    // Refund
+    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "REFUND_001", "존재하지 않는 환불 건입니다."),
+    REFUND_ACCESS_DENIED(HttpStatus.FORBIDDEN, "REFUND_002", "본인의 결제 건만 환불할 수 있습니다."),
+    INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "REFUND_003", "환불 가능한 결제 상태가 아닙니다."),
+    REFUND_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "REFUND_004", "환불 대상 상품이 존재하지 않습니다."),
+    EXCEED_REFUNDABLE_QUANTITY(HttpStatus.BAD_REQUEST, "REFUND_005", "잔여 환불 가능 수량을 초과했습니다."),
+    REFUND_AMOUNT_MISMATCH(HttpStatus.CONFLICT, "REFUND_006", "DB와 PG사의 결제 잔액이 일치하지 않습니다."),
+    DUPLICATE_REFUND_REQUEST(HttpStatus.TOO_MANY_REQUESTS, "REFUND_007", "환불 처리가 진행 중입니다. 잠시 후 다시 시도해주세요.")
     ;
 
     private final HttpStatus status;
