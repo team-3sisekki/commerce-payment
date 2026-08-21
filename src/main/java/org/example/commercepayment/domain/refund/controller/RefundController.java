@@ -2,6 +2,7 @@ package org.example.commercepayment.domain.refund.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.commercepayment.domain.refund.dto.RefundHistoryResponse;
 import org.example.commercepayment.domain.refund.dto.RefundRequest;
 import org.example.commercepayment.domain.refund.dto.RefundResponse;
 import org.example.commercepayment.domain.refund.facade.RefundFacade;
@@ -48,5 +49,18 @@ public class RefundController {
             @AuthenticationPrincipal Long memberId,
             @PathVariable Long paymentId) {
         return ResponseEntity.ok(ApiResponse.ok(refundService.getRefundableItems(memberId, paymentId)));
+    }
+
+
+
+    /**
+     * 환불 영수증 조회 API
+     * 인증된 memberId를 함께 전달
+     */
+    @GetMapping("/history/{paymentId}")
+    public ResponseEntity<ApiResponse<List<RefundHistoryResponse>>> getRefundHistory(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long paymentId) {
+        return ResponseEntity.ok(ApiResponse.ok(refundService.getRefundHistory(memberId, paymentId)));
     }
 }

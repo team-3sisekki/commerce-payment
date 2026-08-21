@@ -69,6 +69,13 @@
                 </div>
             </div>
 
+            <div id="refund-history-section" class="hidden mb-10">
+                <h2 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-6">환불 내역</h2>
+                <div id="refund-history-container" class="space-y-4">
+                    <!-- 환불 영수증 렌더링 영역 -->
+                </div>
+            </div>
+
             <div id="action-section" class="flex flex-col sm:flex-row items-center gap-4">
             </div>
         </div>
@@ -152,7 +159,28 @@
                     </tr>
                 `).join('');
 
-            document.getElementById('items-total').textContent = formatPrice(order.totalPrice) + '원';
+            document.getElementById('items-total').innerHTML = `
+                <div class="flex flex-col space-y-2">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-500">주문 총 금액</span>
+                        <span class="text-gray-900">${formatPrice(order.totalPrice)}원</span>
+                    </div>
+                    ${order.usedPoint > 0 ? `
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-500">포인트 결제</span>
+                        <span class="font-mono text-red-600">-${formatPrice(order.usedPoint)} P</span>
+                    </div>` : ''}
+                    <div class="flex justify-between items-center text-base font-bold pt-2 border-t border-gray-200 mt-2">
+                        <span class="text-gray-900">최종 카드 결제액</span>
+                        <span class="text-black">${formatPrice(order.pgAmount)}원</span>
+                    </div>
+                    ${order.accruedPoint > 0 ? `
+                    <div class="flex justify-between items-center text-xs mt-1">
+                        <span class="text-emerald-600 font-medium">적립 포인트</span>
+                        <span class="font-mono text-emerald-600">+${formatPrice(order.accruedPoint)} P</span>
+                    </div>` : ''}
+                </div>
+            `;
 
             const actionSection = document.getElementById('action-section');
             let actions = `
@@ -173,6 +201,64 @@
             }
 
             actionSection.innerHTML = actions;
+
+            // 환불 내역 조회 및 렌더링
+            if (order.paymentStatus === 'PARTIAL_REFUND' || order.paymentStatus === 'FULL_REFUND') {
+                try {
+                    const refunds = await apiFetch(`/api/refunds/history/${order.paymentId}`);
+                    if (refunds && refunds.length > 0) {
+                        document.getElementById('refund-history-section').classList.remove('hidden');
+                        const container = document.getElementById('refund-history-container');
+                        
+                        container.innerHTML = refunds.map(refund => {
+                            const date = new Date(refund.refundDate).toLocaleDateString('ko-KR', {
+                                year: 'numeric', month: 'long', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                            });
+                            
+                            const itemsHtml = refund.items.map(item => `
+                                <div class="flex justify-between items-center text-sm mt-2">
+                                    <span class="text-gray-600">${item.productName} (x${item.refundQuantity})</span>
+                                    <span class="text-gray-900">${formatPrice(item.itemRefundAmount)}원</span>
+                                </div>
+                            `).join('');
+
+                            return `
+                                <div class="border border-red-100 bg-red-50/30 p-6 rounded-lg">
+                                    <div class="flex justify-between items-center mb-4 border-b border-red-100 pb-4">
+                                        <span class="text-xs font-bold text-red-600 tracking-wider">REFUND #${refund.refundId}</span>
+                                        <span class="text-xs text-gray-500">${date}</span>
+                                    </div>
+                                    <div class="mb-4">
+                                        ${itemsHtml}
+                                    </div>
+                                    <div class="border-t border-red-100 pt-4 space-y-2">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="text-gray-500">PG(카드) 결제 취소</span>
+                                            <span class="font-mono text-gray-700">${formatPrice(refund.pgRefundAmount)}원</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="text-gray-500">사용 포인트 반환</span>
+                                            <span class="font-mono text-gray-700">${formatPrice(refund.pointRefundAmount)} P</span>
+                                        </div>
+                                        ${refund.pointRecoveryAmount > 0 ? `
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="text-gray-500">적립 포인트 회수</span>
+                                            <span class="font-mono text-red-600">-${formatPrice(refund.pointRecoveryAmount)} P</span>
+                                        </div>` : ''}
+                                        <div class="flex justify-between items-center text-sm font-bold mt-2 pt-2 border-t border-red-100 border-dashed">
+                                            <span class="text-gray-900">총 환불 금액</span>
+                                            <span class="text-red-600">${formatPrice(refund.totalRefundAmount)}원</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                } catch (e) {
+                    console.error('환불 내역 조회 실패:', e);
+                }
+            }
 
             document.getElementById('detail-loading').classList.add('hidden');
             document.getElementById('detail-content').classList.remove('hidden');

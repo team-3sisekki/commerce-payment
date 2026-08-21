@@ -19,7 +19,13 @@ public interface RefundRepository extends JpaRepository<Refund, Long> {
     /**
      * 특정 결제 건에 대한 전체 환불 내역
      */
-    List<Refund> findByPaymentId(Long paymentId);
+    @Query("SELECT DISTINCT r FROM Refund r " +
+           "JOIN FETCH r.refundItems ri " +
+           "JOIN FETCH ri.orderItem oi " +
+           "JOIN FETCH oi.product p " +
+           "WHERE r.payment.id = :paymentId " +
+           "ORDER BY r.createdAt DESC")
+    List<Refund> findByPaymentIdWithItems(@Param("paymentId") Long paymentId);
 
     /**
      * 특정 결제 건에 대해 이미 완료된 총 PG 환불 금액
