@@ -86,7 +86,7 @@ public class OrderFacade {
         // 1. 장바구니 조회 (선택된 아이템만)
         List<CartItem> cartItems = getValidateCartItems(memberId, cartItemIds);
         // 상품에 비관적 락을 걸고 일괄 조회
-        // 순서대로 잡아야 데드락이 없으니 정렬
+        // 순서대로 잡아야 데드락이 없으니 정렬비
         List<Long> productIds = cartItems.stream()
                 .map(CartItem::getProductId)
                 .distinct()
