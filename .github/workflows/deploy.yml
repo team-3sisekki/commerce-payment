@@ -72,7 +72,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_USERNAME, DOCKER_REPO_NAME, SHORT_SHA, DB_URL, DB_USERNAME, DB_PASSWORD, PORTONE_API_SECRET, PORTONE_STORE_ID, PORTONE_CHANNEL_KEY
+          envs: DOCKER_USERNAME, DOCKER_REPO_NAME, SHORT_SHA, DB_URL, DB_USERNAME, DB_PASSWORD, PORTONE_API_SECRET, PORTONE_STORE_ID, PORTONE_CHANNEL_KEY, PORTONE_WEBHOOK_SECRET
           script: |
             # 1. 시스템 업데이트 및 도커 설치 (Amazon Linux 2023 기준)
             sudo dnf update -y
