@@ -80,6 +80,7 @@
 
 <script>
     // PaymentStatus enum(PENDING, COMPLETED, FAILED, CANCELLED, PARTIAL_REFUND, FULL_REFUND)에 맞춘 라벨/색상
+    let currentOrder = null;
     const statusConfig = {
         PENDING: { label: '결제 대기', color: 'text-amber-600 bg-amber-50' },
         COMPLETED: { label: '주문 확정', color: 'text-emerald-600 bg-emerald-50' },
@@ -105,7 +106,7 @@
             document.title = `주문 #${order.orderId} | SpartaFashion`;
 
             document.getElementById('order-id-display').textContent = `주문번호 #${order.orderId}`;
-            const sc = statusConfig[order.status] || statusConfig.PENDING;
+            const sc = statusConfig[order.paymentStatus] || statusConfig.PENDING;
             const badge = document.getElementById('status-badge');
             badge.textContent = sc.label;
             badge.className = `self-start px-5 py-2 rounded-full text-xs font-medium ${sc.color}`;
@@ -141,9 +142,9 @@
                         <span class="px-8 py-4 border-2 border-gray-200 text-gray-400 text-sm font-black text-center uppercase tracking-wide rounded-lg">
                             결제 미완료 주문
                         </span>`;
-            } else if (order.status === 'COMPLETED') {
+            } else if (order.paymentStatus === 'COMPLETED' || order.paymentStatus === 'PARTIAL_REFUND') {
                 actions += `
-                        <button onclick="cancelOrder('${order.paymentId}')" class="px-8 py-4 bg-red-600 text-white text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-red-700 transition-all">
+                        <button onclick="cancelCurrentOrder()" class="px-8 py-4 bg-red-600 text-white text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-red-700 transition-all">
                             주문 취소
                         </button>`;
             }
@@ -162,14 +163,23 @@
         }
     }
 
-    function cancelOrder(paymentId) {
+    function cancelCurrentOrder() {
+        if (!currentOrder) return;
+        const items = (currentOrder.orderItems || []).map(item => ({
+            orderItemId: item.orderItemId,
+            requestQuantity: item.quantity
+        }));
         showConfirm('이 주문을 취소하시겠습니까? 결제 금액이 환불됩니다.', async () => {
             try {
-                await apiFetch(`/api/payments/${paymentId}/cancel`, {
+                await apiFetch('/api/refunds', {
                     method: 'POST',
-                    body: JSON.stringify({ reason: '사용자 요청 취소' })
+                    body: JSON.stringify({
+                        paymentId: currentOrder.paymentId,
+                        cancelReason: '사용자 요청 취소',
+                        items: items
+                    })
                 });
-                showToast('주문이 취소되었습니다', 'success');
+                showToast('주문이 정상적으로 취소 및 환불되었습니다.', 'success');
                 loadOrderDetail();
             } catch (e) {
                 showToast('취소 실패: ' + e.message, 'danger');

@@ -3,11 +3,14 @@ package org.example.commercepayment.domain.cart.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.commercepayment.domain.member.entity.Member;
 import org.example.commercepayment.domain.product.entity.Product;
 import org.example.commercepayment.global.entity.BaseTimeEntity;
+import org.example.commercepayment.global.error.BusinessException;
+import org.example.commercepayment.global.error.ErrorCode;
 
 @Entity
 @Table(name = "cart_items", uniqueConstraints = {
@@ -33,11 +36,12 @@ public class CartItem extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "int UNSIGNED DEFAULT 1")
     private int quantity;
 
-    public CartItem(Cart cart, Product product, int quantity) {
+    @Builder
+    private CartItem(Cart cart, Product product, int quantity) {
         this.cart = cart;
         this.product = product;
         if (quantity < 1) {
-            throw new IllegalArgumentException("수량은 1 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_QUANTITY);
         }
         this.quantity = quantity;
     }
@@ -53,14 +57,14 @@ public class CartItem extends BaseTimeEntity {
 
     public void addQuantity(int quantity) {
         if (quantity < 1) {
-            throw new IllegalArgumentException("수량은 1 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_QUANTITY);
         }
         this.quantity += quantity;
     }
 
     public void changeQuantity(int quantity) {
         if (quantity < 1) {
-            throw new IllegalArgumentException("수량은 1 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_QUANTITY);
         }
         this.quantity = quantity;
     }

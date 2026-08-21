@@ -9,7 +9,6 @@ package org.example.commercepayment.infra.portone.dto;
  * https://developers.portone.io/api/rest-v2/payment
  *
  * 주요 생략 필드:
- * - amount: 취소 총 금액 (값을 입력하지 않으면 전액 취소됩니다.)
  * - taxFreeAmount: 취소 금액 중 면세 금액 (값을 입력하지 않으면 전액 과세 취소됩니다.)
  * - vatAmount: 취소 금액 중 부가세액 (값을 입력하지 않으면 자동 계산됩니다.)
  * - requester: 결제 취소 요청 주체, CancelRequester(CUSTOMER / ADMIN)
@@ -17,6 +16,7 @@ package org.example.commercepayment.infra.portone.dto;
  * - refundAccount: 고객 정보 입력 형식 CancelPaymentBodyRefundAccount(bank, number, holderName)
  */
 public record PortOneCancelRequest(
+        Integer amount,  // [추가됨] 취소 총 금액 (값을 입력하지 않으면 전액 취소됩니다.)
         String reason,   // [필수] 취소 사유
         String storeId   // [조건부] 하위 상점 사용 시 필수
 ) {}

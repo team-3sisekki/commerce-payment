@@ -88,6 +88,14 @@ public class Payment extends BaseTimeEntity {
         // 2. 중복 세팅 제거 (changeStatus 내부에서 처리함)
         changeStatus(PaymentStatus.CANCELLED);
     }
+    
+    public void fullRefund() {
+        changeStatus(PaymentStatus.FULL_REFUND);
+    }
+    
+    public void partialRefund() {
+        changeStatus(PaymentStatus.PARTIAL_REFUND);
+    }
 
     // 3. 전액 포인트 결제 여부 확인 메서드 추가
     public boolean isPointOnly() {

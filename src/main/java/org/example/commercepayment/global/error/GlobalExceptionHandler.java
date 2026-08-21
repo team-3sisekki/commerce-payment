@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 
@@ -44,35 +45,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, e.getMessage()));
     }
 
-    // 커스텀 에러 핸들
-    @ExceptionHandler(CustomException.class)
-    public ResponseEntity<?> handleCustomException(CustomException ex, HttpServletRequest request) {
-        log.warn("CustomException: code={}, message={}", ex.getErrorCode(), ex.getMessage());
-
-        String uri = request.getRequestURI();
-        String accept = request.getHeader(HttpHeaders.ACCEPT);
-
-        boolean isHtmlRequest = (uri != null && (uri.startsWith("/view/") || uri.equals("/")))
-                || (accept != null && accept.contains("text/html"));
-
-        if (isHtmlRequest) {
-            if (ex.getStatus() == HttpStatus.UNAUTHORIZED) {
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .header(HttpHeaders.LOCATION, "/view/login")
-                        .build();
-            } else if (ex.getStatus() == HttpStatus.FORBIDDEN) {
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .header(HttpHeaders.LOCATION, "/view/error/403")
-                        .build();
-            }
-        }
-
-        return ResponseEntity
-                .status(ex.getStatus())
-                // 수정: error(String code, String message) 또는 error(ErrorCode, String) 형태 사용
-                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
-    }
-
     // Valid 에러 핸들 (DTO 검증 실패)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
@@ -86,6 +58,15 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 // 수정: error(ErrorCode errorCode, String message) 형태 사용 (.getCode() 제거)
                 .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, errorMessage));
+    }
+
+    // 경로/쿼리 파라미터 타입 불일치 핸들 (예: /api/products/abc)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.warn("MethodArgumentTypeMismatchException: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, "요청 파라미터의 형식이 올바르지 않습니다."));
     }
 
     // 404 에러 핸들 (NoResourceFoundException)

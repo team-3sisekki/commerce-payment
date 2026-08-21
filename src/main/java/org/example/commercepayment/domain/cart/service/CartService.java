@@ -2,7 +2,6 @@ package org.example.commercepayment.domain.cart.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.commercepayment.domain.cart.dto.CartItemResponse;
 import org.example.commercepayment.domain.cart.dto.CartResponse;
 import org.example.commercepayment.domain.cart.entity.CartItem;
 import org.example.commercepayment.domain.cart.repository.CartItemRepository;
@@ -24,19 +23,7 @@ public class CartService {
 
     // 장바구니 조회: 특정 회원의 장바구니 상품 목록과 총 합계 금액을 반환합니다.
     public CartResponse getCartItems(Long memberId) {
-        // 1. DB에서 회원의 장바구니 엔티티(CartItem) 목록을 가져옵니다.
-        // 2. stream().map()을 사용해 엔티티를 프론트엔드에 전달할 DTO(CartItemResponse)로 변환합니다.
-        List<CartItemResponse> items = cartItemRepository.findByMemberId(memberId).stream()
-                .map(this::toResponse)
-                .toList();
-
-        // 3. 변환된 DTO 목록을 순회하면서, 각 상품의 개별 합계 금액(itemTotalPrice)을 모두 더합니다.
-        int totalPrice = items.stream()
-                .mapToInt(CartItemResponse::itemTotalPrice) // 각 아이템에서 가격만 추출
-                .sum(); // 추출한 가격들을 전부 합산
-
-        // 4. 총합계 금액과 아이템 목록을 CartResponse라는 껍데기에 담아서 반환합니다.
-        return new CartResponse(totalPrice, items);
+        return CartResponse.from(cartItemRepository.findByMemberId(memberId));
     }
 
     @Transactional
@@ -129,18 +116,5 @@ public class CartService {
             log.warn("장바구니 삭제 불일치: expected={}, actual={}, memberId={}",
                     orderedItemIds.size(), deleted, memberId);
         }
-    }
-
-    // 유틸리티 메서드: DB 엔티티 객체(CartItem)를 응답용 객체(CartItemResponse)로 예쁘게 포장해 줍니다.
-    private CartItemResponse toResponse(CartItem item) {
-        return new CartItemResponse(
-                item.getId(),                                       // 장바구니 항목 자체의 ID
-                item.getProduct().getId(),                          // 담긴 상품의 ID
-                item.getProduct().getName(),                        // 상품명
-                item.getProduct().getPrice(),                       // 상품 1개당 가격
-                item.getQuantity(),                                 // 담은 수량
-                item.getProduct().getStock(),                       // 상품의 현재 잔여 재고
-                item.getProduct().getPrice() * item.getQuantity()   // 개별 합계 금액 (가격 * 수량) 계산
-        );
     }
 }

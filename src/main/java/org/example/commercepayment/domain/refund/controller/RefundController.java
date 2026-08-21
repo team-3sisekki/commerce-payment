@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.commercepayment.domain.refund.dto.RefundRequest;
 import org.example.commercepayment.domain.refund.dto.RefundResponse;
-import org.example.commercepayment.domain.refund.service.RefundFacade;
+import org.example.commercepayment.domain.refund.facade.RefundFacade;
 import org.example.commercepayment.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
