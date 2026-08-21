@@ -43,6 +43,28 @@ Authorization: {{auth_token}}
 
 
 ### =========================================================================
+### [필수 진행 2] 환불 가능 상품 내역 조회
+### 결제 ID를 기준으로 현재 환불이 가능한 상품 목록과 남은 수량을 조회합니다.
+### =========================================================================
+GET http://localhost:8080/api/refunds/refundable/{{paymentId}}
+Authorization: {{auth_token}}
+
+> {%
+    var items = response.body.data;
+    if (items && items.length > 0) {
+        client.log("--- 🔄 환불 가능 상품 목록 (" + items.length + "개) ---");
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            client.log("👉 [상품 " + (i+1) + "] " + item.productName + " (ID: " + item.orderItemId + ")");
+            client.log("    - 원래 수량: " + item.originalQuantity + "개 / 남은 환불 가능 수량: " + item.remainQuantity + "개");
+        }
+        client.log("---------------------------------------");
+    } else {
+        client.log("⚠️ 조회된 상품이 없습니다.");
+    }
+%}
+
+### =========================================================================
 ### [시나리오 #1, #2] 전액 환불 테스트 (단독 결제 / 복합 결제)
 ### 주문한 상품 수량 전체를 요청합니다.
 ### (화면에서 포인트 0원 적용 시 시나리오 1, 포인트 섞어서 결제 시 시나리오 2 확인 가능)
