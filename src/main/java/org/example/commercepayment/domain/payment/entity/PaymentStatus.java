@@ -43,7 +43,7 @@ public enum PaymentStatus {
     PARTIAL_REFUND {
         @Override
         public boolean canTransitTo(PaymentStatus target) {
-            return target == FULL_REFUND;
+            return target == PARTIAL_REFUND || target == FULL_REFUND;
         }
     },
     FULL_REFUND {

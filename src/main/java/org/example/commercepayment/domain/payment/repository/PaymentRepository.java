@@ -1,7 +1,9 @@
 package org.example.commercepayment.domain.payment.repository;
 
 import org.example.commercepayment.domain.payment.entity.Payment;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -35,4 +37,14 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT p FROM Payment p JOIN FETCH p.order WHERE p.order.id IN :orderIds")
     List<Payment> findByOrderIdIn(@Param("orderIds") List<Long> orderIds);
+
+    // 환불 처리 시 N+1 방지를 위해 Payment, Order, OrderItem, Product를 한 번에 가져오는 쿼리
+    // 비관적 락을 적용하여 동시 다발적인 중복 환불 요청을 방어
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Payment p " +
+           "JOIN FETCH p.order o " +
+           "JOIN FETCH o.orderItems oi " +
+           "JOIN FETCH oi.product " +
+           "WHERE p.id = :paymentId")
+    Optional<Payment> findByIdForRefund(@Param("paymentId") Long paymentId);
 }
