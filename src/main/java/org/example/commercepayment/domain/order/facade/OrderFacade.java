@@ -46,31 +46,7 @@ public class OrderFacade {
         List<CartItem> cartItems = getValidateCartItems(
                 memberId, cartItemIds != null ? cartItemIds : List.of());
 
-        // 스냅샷 전단계_상품 현재가 반영
-        List<CheckoutResponse.CheckoutItemResponse> items = cartItems.stream()
-                .map(cartItem -> {
-                    Product product = cartItem.getProduct();
-                    int price = product.getPrice();
-                    int quantity = cartItem.getQuantity();
-
-                    return new CheckoutResponse.CheckoutItemResponse(
-                            product.getId(),
-                            product.getName(),
-                            price,
-                            quantity,
-                            price * quantity,
-                            product.getStock(),
-                            product.getStock() >= quantity // 결제 화면에서 품절을 미리 안내
-                    );
-                })
-                .toList();
-
-        // 장바구니 총액
-        int totalPrice = items.stream()
-                .mapToInt(CheckoutResponse.CheckoutItemResponse::subtotal)
-                .sum();
-
-        return new CheckoutResponse(items, totalPrice, member.getPoint());
+        return CheckoutResponse.from(cartItems, member.getPoint());
     }
 
     // 주문 생성
@@ -106,7 +82,11 @@ public class OrderFacade {
             // 3. 재고가 하나라도 부족하면 예외 > 트랜잭션 롤백 > 재고 원복
             product.deductStock(cartItem.getQuantity());
 
-            orderItems.add(new OrderItem(product, product.getPrice(), cartItem.getQuantity()));
+            orderItems.add(OrderItem.builder()
+                    .product(product)
+                    .orderPrice(product.getPrice())
+                    .quantity(cartItem.getQuantity())
+                    .build());
         }
 
         int totalPrice = orderItems.stream().mapToInt(OrderItem::getSubtotal).sum();
@@ -125,16 +105,7 @@ public class OrderFacade {
         Payment payment = paymentService.createPayment(order, totalPrice, usePoint);
 
         // 6. 응답
-        return new OrderCheckoutResponse(
-                order.getId(),
-                order.getOrderNumber(),
-                payment.getPortonePaymentId(),
-                totalPrice,
-                usePoint,
-                payment.getPgAmount(),   // 0이면 클라이언트가 결제창을 건너뛴다
-                order.getOrderName(),
-                order.getStatus().name()
-        );
+        return OrderCheckoutResponse.from(order, payment);
     }
 
     // 주문 취소
