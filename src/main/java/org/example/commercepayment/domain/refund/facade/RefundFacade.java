@@ -1,4 +1,4 @@
-package org.example.commercepayment.domain.refund.service;
+package org.example.commercepayment.domain.refund.facade;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +9,9 @@ import org.example.commercepayment.domain.payment.service.PaymentService;
 import org.example.commercepayment.domain.refund.dto.RefundRequest;
 import org.example.commercepayment.domain.refund.dto.RefundResponse;
 import org.example.commercepayment.domain.refund.entity.Refund;
+import org.example.commercepayment.domain.refund.service.RefundService;
+import org.example.commercepayment.global.error.BusinessException;
+import org.example.commercepayment.global.error.ErrorCode;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -32,14 +35,14 @@ public class RefundFacade {
         if (payment.getPgAmount() > 0) {
             PaymentGatewayResponse pgResponse = paymentGateway.getPayment(payment.getPortonePaymentId());
             
-            // 3. 환불액 정합성 철벽 검증 (DB 잔액 vs PG 잔액)
+            // 3. 환불액 정합성 검증 (DB 잔액 vs PG 잔액)
             int pgRemainingAmount = pgResponse.totalAmount() - pgResponse.cancelledAmount();
             log.info("PG 환불 잔액 = {}", pgRemainingAmount);
             int dbRemainingAmount = payment.getPgAmount() - refundService.getRefundedPgAmount(payment.getId());
             log.info("DB 환불 잔액 = {}", dbRemainingAmount);
             
             if (pgRemainingAmount != dbRemainingAmount) {
-                throw new IllegalStateException("DB와 PG사의 결제 잔액이 일치하지 않습니다. 관리자 확인이 필요합니다.");
+                throw new BusinessException(ErrorCode.REFUND_AMOUNT_MISMATCH);
             }
         }
 
