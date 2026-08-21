@@ -59,6 +59,7 @@ public class PaymentService {
     // 결제 완료 처리
     @Transactional
     public void completePayment(Payment payment, int accruedPoint) {
+        
         payment.complete(accruedPoint);
     }
 

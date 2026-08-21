@@ -103,7 +103,12 @@ public class CartService {
         cartItemRepository.deleteAllByMember_Id(memberId);
     }
 
-
+    public void deleteCartItemsByProductIds(Long memberId, List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return;
+        }
+        cartItemRepository.deleteAllByMemberIdAndProductIdIn(memberId, productIds);
+    }
     // 주문 연동용 메서드 (주문 도메인에서 호출하여 사용)
     public List<CartItem> findCartEntitiesByIds(Long memberId, List<Long> cartItemIds) {
         return cartItemRepository.findByIdInAndMember_IdWithProduct(cartItemIds, memberId);

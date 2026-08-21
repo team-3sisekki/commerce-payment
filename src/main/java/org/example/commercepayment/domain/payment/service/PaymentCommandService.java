@@ -1,6 +1,8 @@
 package org.example.commercepayment.domain.payment.service;
 
+import org.example.commercepayment.domain.cart.service.CartService;
 import org.example.commercepayment.domain.order.entity.Order;
+import org.example.commercepayment.domain.order.entity.OrderItem;
 import org.example.commercepayment.domain.order.entity.OrderStatus;
 import org.example.commercepayment.domain.payment.dto.PaymentConfirmResponse;
 import org.example.commercepayment.domain.payment.entity.FailReason;
@@ -10,6 +12,9 @@ import org.example.commercepayment.domain.point.service.PointService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class PaymentCommandService {
@@ -18,6 +23,7 @@ public class PaymentCommandService {
 
     private final PaymentService paymentService;
     private final PointService pointService;
+    private final CartService cartService;
 
     @Transactional
     public void failPaymentAndOrder(Long orderId, FailReason reason) {
@@ -43,19 +49,27 @@ public class PaymentCommandService {
 
         int accruedPoint = (int) (payment.getPgAmount() * POINT_EARN_RATE);
 
-        // 포인트 사용 처리
         if (payment.getPointUsedAmount() > 0) {
             pointService.use(order.getMemberId(), payment, payment.getPointUsedAmount());
         }
 
         paymentService.completePayment(payment, accruedPoint);
 
-        // 포인트 적립 처리 (완료 후 금액 기준)
         if (accruedPoint > 0) {
             pointService.earn(order.getMemberId(), payment, accruedPoint);
         }
 
         order.transitTo(OrderStatus.COMPLETED);
+
+        // -----------------------------------------------------------
+        // OrderItem 스냅샷의 Product ID 목록 추출 후 장바구니 삭제
+        // -----------------------------------------------------------
+        List<Long> productIds = order.getOrderItems().stream()
+                .map(orderItem -> orderItem.getProduct().getId())
+                .toList();
+
+        cartService.deleteCartItemsByProductIds(order.getMemberId(), productIds);
+
         return PaymentConfirmResponse.from(payment);
     }
 }
