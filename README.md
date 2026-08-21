@@ -39,8 +39,8 @@
 
 ---
 
-## 📊 ERD (Entity Relationship Diagram)
-![ERD](https://github.com/user-attachments/assets/90b1c202-880a-4c1a-8409-0de6d9bcb93e)
+## 🗂 ERD (Entity Relationship Diagram)
+![ERD](https://github.com/user-attachments/assets/76d573dc-b63d-4d74-bc1a-d4b085966c4c)
 
 ---
 
