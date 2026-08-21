@@ -169,12 +169,12 @@ public class RefundService {
         }
 
         // 환불(Refund) 내역(부모) 생성
-        Refund refund = Refund.create(
-                payment,
-                request.cancelReason(),
-                totalPointRefundAmount,
-                totalPgRefundAmount
-        );
+        Refund refund = Refund.builder()
+                .payment(payment)
+                .cancelReason(request.cancelReason())
+                .pointRefundAmount(totalPointRefundAmount)
+                .pgRefundAmount(totalPgRefundAmount)
+                .build();
 
         Refund savedRefund = refundRepository.save(refund);
 
@@ -221,7 +221,12 @@ public class RefundService {
             int lastPointRefundAmount = totalPointRefundAmount - accumulatedPointItemRefund;
             int lastPgRefundAmount = totalPgRefundAmount - accumulatedPgItemRefund;
 
-            items.add(RefundItem.create(lastOrderItem, lastReq.requestQuantity(), lastPointRefundAmount, lastPgRefundAmount));
+            items.add(RefundItem.builder()
+                    .orderItem(lastOrderItem)
+                    .refundQuantity(lastReq.requestQuantity())
+                    .pointRefundAmount(lastPointRefundAmount)
+                    .pgRefundAmount(lastPgRefundAmount)
+                    .build());
 
         } else {
             // [분기 B 부분 환불]
@@ -251,7 +256,12 @@ public class RefundService {
             itemPgRefundAmount += lostAmount;
         }
 
-        return RefundItem.create(orderItem, itemReq.requestQuantity(), itemPointRefundAmount, itemPgRefundAmount);
+        return RefundItem.builder()
+                .orderItem(orderItem)
+                .refundQuantity(itemReq.requestQuantity())
+                .pointRefundAmount(itemPointRefundAmount)
+                .pgRefundAmount(itemPgRefundAmount)
+                .build();
     }
 
     /**
