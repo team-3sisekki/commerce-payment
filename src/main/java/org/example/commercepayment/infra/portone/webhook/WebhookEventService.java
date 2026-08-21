@@ -27,7 +27,7 @@ public class WebhookEventService {
         if (webhookEventRepository.existsByWebhookId(webhookId)) {
             return Optional.empty();
         }
-        return Optional.of(webhookEventRepository.save(new WebhookEvent(webhookId, type, payload)));
+        return Optional.of(webhookEventRepository.save(new WebhookEvent(null, webhookId, type, payload)));
     }
 
     // 웹훅 본 처리 로직이 성공한 경우 호출. status를 PROCESSED로, finished_at을 now()로 바꾼다.
