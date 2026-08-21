@@ -44,35 +44,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, e.getMessage()));
     }
 
-    // 커스텀 에러 핸들
-    @ExceptionHandler(CustomException.class)
-    public ResponseEntity<?> handleCustomException(CustomException ex, HttpServletRequest request) {
-        log.warn("CustomException: code={}, message={}", ex.getErrorCode(), ex.getMessage());
-
-        String uri = request.getRequestURI();
-        String accept = request.getHeader(HttpHeaders.ACCEPT);
-
-        boolean isHtmlRequest = (uri != null && (uri.startsWith("/view/") || uri.equals("/")))
-                || (accept != null && accept.contains("text/html"));
-
-        if (isHtmlRequest) {
-            if (ex.getStatus() == HttpStatus.UNAUTHORIZED) {
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .header(HttpHeaders.LOCATION, "/view/login")
-                        .build();
-            } else if (ex.getStatus() == HttpStatus.FORBIDDEN) {
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .header(HttpHeaders.LOCATION, "/view/error/403")
-                        .build();
-            }
-        }
-
-        return ResponseEntity
-                .status(ex.getStatus())
-                // 수정: error(String code, String message) 또는 error(ErrorCode, String) 형태 사용
-                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
-    }
-
     // Valid 에러 핸들 (DTO 검증 실패)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {

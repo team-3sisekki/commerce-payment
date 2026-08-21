@@ -58,6 +58,7 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001", "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_002", "권한이 없습니다."),
     DUPLICATED_EMAIL(HttpStatus.CONFLICT, "AUTH_003", "이미 가입된 이메일 입니다."),
+    WRONG_EMAIL_PW(HttpStatus.NOT_FOUND, "AUTH_004", "이메일 또는 비밀번호가 올바르지 않습니다."),
 
     // 멤버 에러
     NOT_FOUND_MEMBER(HttpStatus.NOT_FOUND, "MEMBER_001", "회원을 찾지 못했습니다."),
