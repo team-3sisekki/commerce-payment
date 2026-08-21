@@ -42,25 +42,14 @@ public class Refund extends BaseTimeEntity {
     @OneToMany(mappedBy = "refund", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RefundItem> refundItems = new ArrayList<>();
 
-    // 생성자 및 빌더는 private으로 캡슐화
-    @Builder(access = AccessLevel.PRIVATE)
-    private Refund(Payment payment, String cancelReason, int pointRefundAmount, int pgRefundAmount, RefundStatus status) {
+    // 빌더 패턴 적용
+    @Builder
+    private Refund(Payment payment, String cancelReason, int pointRefundAmount, int pgRefundAmount) {
         this.payment = payment;
         this.cancelReason = cancelReason;
         this.pointRefundAmount = pointRefundAmount;
         this.pgRefundAmount = pgRefundAmount;
-        this.status = status;
-    }
-
-    // 정적 팩토리 메서드를 통해서만 객체 생성
-    public static Refund create(Payment payment, String cancelReason, int pointRefundAmount, int pgRefundAmount) {
-        return Refund.builder()
-                .payment(payment)
-                .cancelReason(cancelReason)
-                .pointRefundAmount(pointRefundAmount)
-                .pgRefundAmount(pgRefundAmount)
-                .status(RefundStatus.COMPLETED) // 기본 생성 상태값
-                .build();
+        this.status = RefundStatus.COMPLETED; // 기본 생성 상태값
     }
 
     // 비즈니스 로직 캡슐화 (상태 변경 - Enum에 위임)
