@@ -56,4 +56,9 @@ public class PageController {
         return "order/complete";
     }
 
+    @GetMapping("/webhooks")
+    public String webhooks() {
+        return "webhook/list";
+    }
+
 }

@@ -53,8 +53,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/favicon.*").permitAll()
-                        .requestMatchers("/", "/login", "/signup", "/products/**", "/cart", "/orders/**", "/checkout").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/products/**", "/api/webhooks/**", "/api/config/**").permitAll()
+                        .requestMatchers("/", "/login", "/signup", "/products/**", "/cart", "/orders/**", "/checkout", "/webhooks").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/products/**", "/api/webhooks", "/api/webhooks/**", "/api/config/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
