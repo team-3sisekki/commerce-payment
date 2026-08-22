@@ -31,7 +31,8 @@ public class RefundCalculator {
             Payment payment,
             boolean isFullRefund,
             int refundedPgAmount,
-            int refundedPointAmount
+            int refundedPointAmount,
+            int refundedPointRecoveryAmount
     ) {
         int totalPgRefundAmount = 0;
         int totalPointRefundAmount = 0;
@@ -54,11 +55,17 @@ public class RefundCalculator {
             log.info("부분 환불 개별 항목 합산 금액: PG={}, Point={}", totalPgRefundAmount, totalPointRefundAmount);
         }
 
-        // 적립 포인트(회수 대상):  결제 시 받은 전체 적립금 × (이번 PG 환불액 / 전체 PG 실결제액)
+        // 적립 포인트(회수 대상) 계산 로직
         int pointRecovery = 0;
         if (payment.getPgAmount() > 0) {
-            pointRecovery = (int) Math.floor((double) payment.getEarnedPointAmount() * totalPgRefundAmount / payment.getPgAmount());
-            log.info("회수될 적립 포인트 계산: 회수액={} (전체 적립금={}, 이번 환불PG={}, 전체 PG 실결제액={})", pointRecovery, payment.getEarnedPointAmount(), totalPgRefundAmount, payment.getPgAmount());
+            if (isFullRefund) {
+                // 전액/마지막 환불인 경우: (전체 적립 포인트) - (지금까지 회수된 적립 포인트)
+                pointRecovery = payment.getEarnedPointAmount() - refundedPointRecoveryAmount;
+                log.info("마지막 환불 적립 포인트 회수 보정: 회수액={} (전체 적립금={}, 기회수액={})", pointRecovery, payment.getEarnedPointAmount(), refundedPointRecoveryAmount);
+            } else {
+                pointRecovery = (int) Math.floor((double) payment.getEarnedPointAmount() * totalPgRefundAmount / payment.getPgAmount());
+                log.info("회수될 적립 포인트 계산: 회수액={} (전체 적립금={}, 이번 환불PG={}, 전체 PG 실결제액={})", pointRecovery, payment.getEarnedPointAmount(), totalPgRefundAmount, payment.getPgAmount());
+            }
         }
 
         return new RefundCalculationResult(generatedRefundItems, totalPgRefundAmount, totalPointRefundAmount, pointRecovery);
