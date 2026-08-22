@@ -52,7 +52,12 @@ public class PaymentService {
     }
 
     public Payment findForRefund(Long paymentId) {
-        return paymentRepository.findByIdForRefund(paymentId)
+        // 1. Payment 단독 락 획득 (이중 환불 차단)
+        paymentRepository.findByIdForRefundLockOnly(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 2. 락 없이 순수하게 연관 데이터 통째로 조회 (N+1 방지)
+        return paymentRepository.findByIdWithOrderAndItems(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 

@@ -43,13 +43,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT p FROM Payment p JOIN FETCH p.order WHERE p.order.id IN :orderIds")
     List<Payment> findByOrderIdIn(@Param("orderIds") List<Long> orderIds);
 
-    // 환불 처리 시 N+1 방지를 위해 Payment, Order, OrderItem, Product를 한 번에 가져오는 쿼리
-    // 비관적 락을 적용하여 동시 다발적인 중복 환불 요청을 방어
+    // 환불 처리 시 결제건(Payment)에만 단일 비관적 락을 획득하여 이중 환불을 방지합니다.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT p FROM Payment p " +
-           "JOIN FETCH p.order o " +
-           "JOIN FETCH o.orderItems oi " +
-           "JOIN FETCH oi.product " +
-           "WHERE p.id = :paymentId")
-    Optional<Payment> findByIdForRefund(@Param("paymentId") Long paymentId);
+    @Query("SELECT p FROM Payment p WHERE p.id = :paymentId")
+    Optional<Payment> findByIdForRefundLockOnly(@Param("paymentId") Long paymentId);
 }
