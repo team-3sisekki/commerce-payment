@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹훅 이벤트 내역 (관리자)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+    
+    <!-- Admin Header -->
+    <header class="bg-gray-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+            <div class="text-lg font-bold flex items-center gap-2">
+                <i class="ri-settings-4-line text-blue-400"></i>
+                관리자 시스템
+            </div>
+            <div class="text-sm text-gray-400">웹훅 모니터링 대시보드</div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-10">
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight">웹훅 이벤트 내역</h1>
+                <p class="text-gray-500 mt-1 text-sm font-medium">포트원 결제 서버로부터 수신한 이벤트 기록입니다.</p>
+            </div>
+            <button onclick="loadWebhooks()" class="px-4 py-2 bg-white border border-gray-200 text-sm font-bold rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                <i class="ri-refresh-line"></i> 새로고침
+            </button>
+        </div>
+
+        <div id="webhook-loading" class="space-y-4">
+            <div class="skeleton w-full h-24 rounded-xl"></div>
+            <div class="skeleton w-full h-24 rounded-xl"></div>
+            <div class="skeleton w-full h-24 rounded-xl"></div>
+        </div>
+
+        <div id="webhook-error" class="hidden text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <i class="ri-error-warning-line text-5xl text-red-300 mb-4 inline-block"></i>
+            <p class="text-gray-600 font-medium" id="error-message">데이터를 불러오지 못했습니다.</p>
+        </div>
+
+        <div id="webhook-empty" class="hidden text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <i class="ri-inbox-2-line text-5xl text-gray-300 mb-4 inline-block"></i>
+            <p class="text-gray-500 font-medium text-lg">웹훅 이벤트 내역이 없습니다</p>
+        </div>
+
+        <div id="webhook-list" class="space-y-4 hidden">
+            <!-- 웹훅 항목 렌더링 영역 -->
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadWebhooks);
+
+        async function loadWebhooks() {
+            document.getElementById('webhook-loading').classList.remove('hidden');
+            document.getElementById('webhook-list').classList.add('hidden');
+            document.getElementById('webhook-empty').classList.add('hidden');
+            document.getElementById('webhook-error').classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/webhooks');
+                
+                if (!response.ok) {
+                    throw new Error(`서버 에러 (HTTP ${response.status})`);
+                }
+
+                const result = await response.json();
+                const webhooks = result.data || result; // ApiResponse 구조 대응
+                
+                document.getElementById('webhook-loading').classList.add('hidden');
+
+                if (!webhooks || webhooks.length === 0) {
+                    document.getElementById('webhook-empty').classList.remove('hidden');
+                    return;
+                }
+
+                const listContainer = document.getElementById('webhook-list');
+                listContainer.classList.remove('hidden');
+                
+                listContainer.innerHTML = webhooks.map((event, index) => {
+                    const statusColor = getStatusColor(event.status);
+                    return `
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all animate-fade-in" style="animation-delay: ${index * 0.05}s">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded-md ${statusColor}">
+                                            ${event.status}
+                                        </span>
+                                        <span class="text-sm font-bold text-gray-900">${event.eventType}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">Webhook ID: ${event.webhookId}</div>
+                                    ${event.failReason ? `<div class="text-xs text-red-600 mt-2 bg-red-50 px-3 py-2 rounded-md font-medium"><i class="ri-error-warning-line align-text-bottom mr-1"></i> ${event.failReason}</div>` : ''}
+                                </div>
+                                <div class="text-left md:text-right bg-gray-50 px-4 py-3 rounded-lg min-w-[200px]">
+                                    <div class="text-xs font-semibold text-gray-900 mb-1">결제 ID : ${event.paymentId || '없음'}</div>
+                                    <div class="text-[11px] text-gray-500 leading-relaxed">
+                                        수신: ${formatDate(event.createdAt)}<br>
+                                        처리: ${event.processedAt ? formatDate(event.processedAt) : '-'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                document.getElementById('webhook-loading').classList.add('hidden');
+                const errDiv = document.getElementById('webhook-error');
+                errDiv.classList.remove('hidden');
+                document.getElementById('error-message').textContent = e.message || '데이터를 불러올 수 없습니다.';
+            }
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'PROCESSED': return 'bg-green-100 text-green-700';
+                case 'RECEIVED': return 'bg-blue-100 text-blue-700';
+                case 'IGNORED': return 'bg-gray-100 text-gray-600';
+                case 'FAILED': return 'bg-red-100 text-red-700';
+                default: return 'bg-gray-100 text-gray-700';
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            try {
+                // 배열 형태인지 확인 (Jackson JSR310)
+                if (Array.isArray(dateString)) {
+                    const [year, month, day, hour, minute, second] = dateString;
+                    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second || 0).padStart(2, '0')}`;
+                }
+                const date = new Date(dateString);
+                return date.toLocaleString('ko-KR', { 
+                    year: 'numeric', month: '2-digit', day: '2-digit', 
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    hour12: false
+                });
+            } catch(e) {
+                return dateString;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -52,4 +52,9 @@ public class WebhookEventService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.WEBHOOK_EVENT_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
+    public java.util.List<WebhookEvent> getWebhookEvents() {
+        return webhookEventRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+    }
+
 }

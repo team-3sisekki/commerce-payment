@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.commercepayment.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/webhooks")
@@ -16,6 +17,7 @@ public class WebhookController {
 
     private final PortOneWebhookVerifier portOneWebhookVerifier;
     private final WebhookHandler webhookHandler;
+    private final WebhookEventService webhookEventService;
 
     @PostMapping("/portone")
     public ResponseEntity<ApiResponse<Void>> handlePortOneWebhook(
@@ -38,6 +40,11 @@ public class WebhookController {
         // 2. 검증 통과 : 핸들러로 위임
         webhookHandler.handle(webhookId, webhook, body);
         return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<WebhookEvent>>> getWebhookEvents() {
+        return ResponseEntity.ok(ApiResponse.ok(webhookEventService.getWebhookEvents()));
     }
 
 }
