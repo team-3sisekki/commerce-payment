@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+
 import static java.util.stream.Collectors.toMap;
 
 import org.example.commercepayment.domain.product.service.ProductService;
@@ -93,7 +95,7 @@ public class RefundService {
      * 환불 내역 조회 (영수증용)
      */
     @Transactional(readOnly = true)
-    public List<org.example.commercepayment.domain.refund.dto.RefundHistoryResponse> getRefundHistory(Long memberId, Long paymentId) {
+    public List<RefundHistoryResponse> getRefundHistory(Long memberId, Long paymentId) {
         Payment payment = paymentService.findByIdWithOrder(paymentId);
         validatePaymentOwnership(payment, memberId);
 
@@ -146,7 +148,7 @@ public class RefundService {
         // 2. 메모리에서 상품별 잔여 환불 가능 수량 합산 계산
         Map<Long, Integer> refundedQuantityMap = completedRefunds.stream()
                 .flatMap(r -> r.getRefundItems().stream())
-                .collect(java.util.stream.Collectors.groupingBy(
+                .collect(Collectors.groupingBy(
                         ri -> ri.getOrderItem().getId(),
                         java.util.stream.Collectors.summingInt(RefundItem::getRefundQuantity)
                 ));
