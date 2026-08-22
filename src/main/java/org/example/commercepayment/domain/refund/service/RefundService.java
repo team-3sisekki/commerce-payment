@@ -40,11 +40,18 @@ public class RefundService {
     private final RefundItemRepository refundItemRepository;
     private final RefundCalculator refundCalculator;
 
+    /**
+     * 환불 가능한 상품 목록 및 남은 수량 조회 (사용자 화면 출력용)
+     */
     @Transactional(readOnly = true)
     public List<RefundableItemResponse> getRefundableItems(Long memberId, Long paymentId) {
+        /* 환불하려는 원본 결제 및 주문 상품 정보 조회*/
         Payment payment = paymentService.findByIdWithOrderAndItems(paymentId);
+
+        /* 본인 소유 주문 여부 확인 */
         validatePaymentOwnership(payment, memberId);
 
+        /* 상품별로 '아직 환불받을 수 있는 진짜 남은 수량'을 한 번에 계산*/
         Map<Long, Integer> remainQuantities = calculateRemainQuantities(payment.getOrder().getOrderItems());
 
         return payment.getOrder().getOrderItems().stream()
@@ -102,11 +109,16 @@ public class RefundService {
         log.info("========== [환불 처리 시작] ==========");
         log.info("요청 정보: 결제ID={}, 회원ID={}, 환불상품갯수={}", request.paymentId(), memberId, request.items().size());
 
-        // 조회 쿼리에 락 설정
+        /* 환불, 상품, 상품조회 쿼리에 락 설정*/
         Payment payment = paymentService.findForRefund(request.paymentId());
 
-        // 5초 이내에 동일한 결제건으로 환불된 내역이 있는지 확인
-        if (refundRepository.existsByPaymentIdAndCreatedAtAfter(request.paymentId(), LocalDateTime.now().minusSeconds(5))) {
+        /* 과거 환불 내역 한 번에 전부 조회*/
+        List<Refund> existingRefunds = refundRepository.findByPaymentIdWithItems(request.paymentId());
+
+        /* 5초 이내에 동일한 결제건으로 환불된 내역이 있는지 확인 (메모리에서 처리)*/
+        boolean isDuplicated = existingRefunds.stream()
+                .anyMatch(r -> r.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(5)));
+        if (isDuplicated) {
             throw new BusinessException(ErrorCode.DUPLICATE_REFUND_REQUEST);
         }
 
@@ -119,22 +131,33 @@ public class RefundService {
             throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
         }
 
+        /* 성공한 환불 건만 필터링*/
+        List<Refund> completedRefunds = existingRefunds.stream()
+                .filter(r -> r.getStatus() == RefundStatus.COMPLETED)
+                .toList();
+
         /* 환불 대상 상품의 잔여 환불 가능 수량 초과 여부 확인*/
-        //1. 모든 상품의 '원본 정보(최초 주문 수량 등)'를 한 번에 조회 > 찾기 쉽게 Map(사전) 형태로 변경 (상품ID:상품 정보)
+        // 1. 모든 상품의 '원본 정보(최초 주문 수량 등)'를 한 번에 조회 > 찾기 쉽게 Map(사전) 형태로 변경 (상품ID:상품 정보)
         Map<Long, OrderItem> orderItemMap = payment.getOrder().getOrderItems().stream()
                 .collect(toMap(OrderItem::getId, item -> item));
 
-        //2. 모든 상품의 잔여 환불 가능 수량 계산
-        Map<Long, Integer> remainQuantities = calculateRemainQuantities(payment.getOrder().getOrderItems());
+        // 2. 메모리에서 상품별 잔여 환불 가능 수량 합산 계산
+        Map<Long, Integer> refundedQuantityMap = completedRefunds.stream()
+                .flatMap(r -> r.getRefundItems().stream())
+                .collect(java.util.stream.Collectors.groupingBy(
+                        ri -> ri.getOrderItem().getId(),
+                        java.util.stream.Collectors.summingInt(RefundItem::getRefundQuantity)
+                ));
 
-        //3. 잔여 수량 검증
+        // 3. 잔여 수량 검증
         for (RefundItemRequest item : request.items()) {
             if (!orderItemMap.containsKey(item.orderItemId())) {
                 throw new BusinessException(ErrorCode.REFUND_ITEM_NOT_FOUND);
             }
 
-            // 진짜 남은 환불 가능 수량
-            int remainingQuantity = remainQuantities.getOrDefault(item.orderItemId(), 0);
+            int originalQty = orderItemMap.get(item.orderItemId()).getQuantity();
+            int refundedQty = refundedQuantityMap.getOrDefault(item.orderItemId(), 0);
+            int remainingQuantity = originalQty - refundedQty;
 
             // 이번에 환불해달라고 요청한 수량이, 남은 수량보다 많으면 에러
             if (item.requestQuantity() > remainingQuantity) {
@@ -142,27 +165,30 @@ public class RefundService {
             }
         }
 
-
-        // 4. '총 상품 개수' - '현재 남은 환불 가능 개수' 로 전액/마지막 환불인지 부분환불 인지 분개처리
+        /* '총 상품 개수' - '현재 남은 환불 가능 개수' 로 전액/마지막 환불인지 부분환불 인지 분개처리*/
         int totalRequestedQuantity = request.items().stream()
                 .mapToInt(RefundItemRequest::requestQuantity)
                 .sum();
 
         int totalOriginalPaymentQuantity = payment.getOrder().getTotalQuantity();
-        int totalRefundedPaymentQuantity = refundItemRepository.sumRefundedQuantityByPaymentId(request.paymentId());
+        int totalRefundedPaymentQuantity = completedRefunds.stream()
+                .flatMap(r -> r.getRefundItems().stream())
+                .mapToInt(RefundItem::getRefundQuantity)
+                .sum();
         int paymentRemainingQuantity = totalOriginalPaymentQuantity - totalRefundedPaymentQuantity;
 
         boolean isFullRefund = (totalRequestedQuantity == paymentRemainingQuantity);
 
         log.info("전액환불여부={} (요청수량={}, 남은결제수량={})", isFullRefund, totalRequestedQuantity, paymentRemainingQuantity);
 
-        // 5. 기 환불된 금액 조회 (RefundCalculator에 넘겨줄 용도)
-        int refundedPgAmount = refundRepository.sumRefundedPgAmountByPaymentId(payment.getId());
-        int refundedPointAmount = refundRepository.sumRefundedPointAmountByPaymentId(payment.getId());
+        /* 기 환불된 금액 메모리에서 계산 (RefundCalculator에 넘겨줄 용도)*/
+        int refundedPgAmount = completedRefunds.stream().mapToInt(Refund::getPgRefundAmount).sum();
+        int refundedPointAmount = completedRefunds.stream().mapToInt(Refund::getPointRefundAmount).sum();
+        int refundedPointRecoveryAmount = completedRefunds.stream().mapToInt(Refund::getPointRecoveryAmount).sum();
 
-        // 6. RefundCalculator에게 복잡한 계산을 통째로 위임해서 결과만 받아온다!
+        /* RefundCalculator에게 복잡한 계산을 통째로 위임해서 결과만 받아온다! (refundedPointRecoveryAmount 인자 추가)*/
         RefundCalculator.RefundCalculationResult calcResult = refundCalculator.calculate(
-                request, orderItemMap, payment, isFullRefund, refundedPgAmount, refundedPointAmount
+                request, orderItemMap, payment, isFullRefund, refundedPgAmount, refundedPointAmount, refundedPointRecoveryAmount
         );
 
         if (isFullRefund) {

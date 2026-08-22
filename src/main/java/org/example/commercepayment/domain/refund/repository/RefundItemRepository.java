@@ -10,12 +10,6 @@ import java.util.List;
 
 public interface RefundItemRepository extends JpaRepository<RefundItem, Long> {
 
-    @Query("SELECT COALESCE(SUM(ri.refundQuantity), 0) " +
-            "FROM RefundItem ri " +
-            "WHERE ri.refund.payment.id = :paymentId " +
-            "AND ri.refund.status = 'COMPLETED'")
-    int sumRefundedQuantityByPaymentId(@Param("paymentId") Long paymentId);
-
     /**
      * 여러 주문 상품에 대한 누적 환불 수량 일괄 조회
      */
