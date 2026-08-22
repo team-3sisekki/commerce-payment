@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,6 +54,11 @@ public class ProductService {
         return productRepository.findById(id).orElseThrow(
                 () -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND)
         );
+    }
+
+    @Transactional
+    public List<Product> findAllByIdForUpdate(List<Long> ids) {
+        return productRepository.findAllByIdForUpdate(ids);
     }
 
 }

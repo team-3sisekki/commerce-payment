@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import static java.util.stream.Collectors.toMap;
 
+import org.example.commercepayment.domain.product.service.ProductService;
 import org.example.commercepayment.domain.refund.dto.RefundableItemResponse;
 import org.example.commercepayment.domain.refund.component.RefundCalculator;
 
@@ -39,6 +40,7 @@ public class RefundService {
     private final RefundRepository refundRepository;
     private final RefundItemRepository refundItemRepository;
     private final RefundCalculator refundCalculator;
+    private final ProductService productService;
 
     /**
      * 환불 가능한 상품 목록 및 남은 수량 조회 (사용자 화면 출력용)
@@ -198,6 +200,18 @@ public class RefundService {
         } else {
             // 부분 환불이므로 결제 상태만 바꾸고, 주문 상태는 그대로 유지한다.
             payment.partialRefund();
+        }
+
+        // 재고 롤백 시 갱신 손실(Lost Update)과 데드락을 막기 위해 
+        // 상품 ID 순서대로 락 획득 (DB에 쿼리만 날리면 영속성 컨텍스트에 락이 적용됨)
+        List<Long> productIdsToRestore = request.items().stream()
+                .map(itemReq -> orderItemMap.get(itemReq.orderItemId()).getProduct().getId())
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (!productIdsToRestore.isEmpty()) {
+            productService.findAllByIdForUpdate(productIdsToRestore);
         }
 
         // 환불된 상품 재고 수량 원복 (+)
