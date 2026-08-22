@@ -80,6 +80,9 @@ jobs:
             sudo systemctl enable docker
             sudo systemctl start docker
             
+            # EC2 호스트 타임존 한국 시간(KST)으로 고정
+            sudo timedatectl set-timezone Asia/Seoul
+            
             # 2. 최신 이미지 Pull (Public Repo 가정)
             DOCKER_IMAGE="$DOCKER_USERNAME/$DOCKER_REPO_NAME:$SHORT_SHA"
             sudo docker pull $DOCKER_IMAGE
@@ -88,8 +91,9 @@ jobs:
             sudo docker stop spring-app || true
             sudo docker rm spring-app || true
             
-            # 4. 새 컨테이너 실행 (환경변수 주입)
+            # 4. 새 컨테이너 실행 (환경변수 및 타임존 주입)
             sudo docker run -d --name spring-app -p 8080:8080 --restart unless-stopped \
+              -e TZ=Asia/Seoul \
               -e SPRING_PROFILES_ACTIVE=prod \
               -e DB_URL=$DB_URL \
               -e DB_USERNAME=$DB_USERNAME \
