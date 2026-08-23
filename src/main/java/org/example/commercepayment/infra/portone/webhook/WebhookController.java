@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.commercepayment.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -28,7 +29,6 @@ public class WebhookController {
 
         log.info("[Webhook] received id={} timestamp={}", webhookId, webhookTimestamp);
 
-        // 1. 시그니처 검증 : 실패 시 200 + 경고 로그 (standard-webhooks 권고)
         Webhook webhook;
         try {
             webhook = portOneWebhookVerifier.verify(body, webhookId, webhookSignature, webhookTimestamp);
@@ -37,14 +37,14 @@ public class WebhookController {
             return ResponseEntity.ok(ApiResponse.ok());
         }
 
-        // 2. 검증 통과 : 핸들러로 위임
         webhookHandler.handle(webhookId, webhook, body);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
+    // 로그인한 회원 본인의 결제/주문에 연결된 웹훅만 조회
     @GetMapping
-    public ResponseEntity<ApiResponse<List<WebhookEvent>>> getWebhookEvents() {
-        return ResponseEntity.ok(ApiResponse.ok(webhookEventService.getWebhookEvents()));
+    public ResponseEntity<ApiResponse<List<WebhookEvent>>> getWebhookEvents(Authentication authentication) {
+        Long memberId = (Long) authentication.getPrincipal(); // ← 실제 인증 방식에 맞게 조정 필요
+        return ResponseEntity.ok(ApiResponse.ok(webhookEventService.getWebhookEventsByMember(memberId)));
     }
-
 }

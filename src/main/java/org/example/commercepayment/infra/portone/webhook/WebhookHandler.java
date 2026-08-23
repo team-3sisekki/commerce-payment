@@ -62,6 +62,9 @@ public class WebhookHandler {
 
         Payment payment = paymentService.findByPortonePaymentId(portonePaymentId);
 
+        // 이 웹훅 이벤트를 어떤 결제와 연결된 것인지 기록 (회원별 웹훅 조회에 사용)
+        webhookEventService.attachPaymentId(eventId, payment.getId());
+
         if (pg.totalAmount() != payment.getAmount()) {
             webhookEventService.markFailed(eventId, "금액 불일치: db=" + payment.getAmount() + ", pg=" + pg.totalAmount());
             return;
@@ -90,6 +93,9 @@ public class WebhookHandler {
         }
 
         Payment payment = paymentService.findByPortonePaymentId(portonePaymentId);
+
+        // 이 웹훅 이벤트를 어떤 결제와 연결된 것인지 기록 (회원별 웹훅 조회에 사용)
+        webhookEventService.attachPaymentId(eventId, payment.getId());
 
         // 이미 우리 쪽에서 처리된 취소(COMPLETED/PARTIAL_REFUND가 아닌 경우)면 스킵 — 중복 처리 방지
         if (payment.getStatus() == PaymentStatus.COMPLETED || payment.getStatus() == PaymentStatus.PARTIAL_REFUND) {
