@@ -6,6 +6,7 @@ import org.example.commercepayment.global.error.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -46,6 +47,14 @@ public class WebhookEventService {
         load(eventId).markAsFailed(reason);
     }
 
+    // 웹훅 이벤트가 어떤 결제(paymentId)와 연결된 것인지 사후에 채워 넣는다.
+    // 처음 저장 시점(saveIfNotDuplicate)에는 아직 PG 재조회 전이라 결제를 특정할 수 없으므로,
+    // handlePaid/handleCancel에서 결제를 찾아낸 직후 이 메서드로 갱신한다.
+    // 이 값이 채워져야 회원별 웹훅 조회(findByMemberId)가 정상적으로 동작한다.
+    public void attachPaymentId(Long eventId, Long paymentId) {
+        load(eventId).assignPaymentId(paymentId);
+    }
+
     // PK로 조회하되, 없으면 비즈니스 예외로 변환한다.
     private WebhookEvent load(Long eventId) {
         return webhookEventRepository.findById(eventId)
@@ -53,8 +62,13 @@ public class WebhookEventService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<WebhookEvent> getWebhookEvents() {
+    public List<WebhookEvent> getWebhookEvents() {
         return webhookEventRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
     }
 
+    // 로그인한 회원의 결제/주문에 연결된 웹훅 이벤트만 조회
+    @Transactional(readOnly = true)
+    public List<WebhookEvent> getWebhookEventsByMember(Long memberId) {
+        return webhookEventRepository.findByMemberId(memberId);
+    }
 }

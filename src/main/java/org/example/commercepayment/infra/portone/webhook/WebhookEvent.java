@@ -64,4 +64,8 @@ public class WebhookEvent extends BaseTimeEntity {
         this.processedAt = LocalDateTime.now();
         this.failReason = reason;
     }
+    
+    public void assignPaymentId(Long paymentId) {
+        this.paymentId = paymentId;
+    }
 }
