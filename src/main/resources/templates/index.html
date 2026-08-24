@@ -3,20 +3,6 @@
 <head>
     <th:block th:replace="~{layout/default :: head('홈')}" />
     <style>
-        .hero-gradient-animate {
-            background: linear-gradient(-45deg, #1a1a1a, #2d2d2d, #1a1a1a, #0f0f0f);
-            background-size: 400% 400%;
-            animation: gradient-shift 15s ease infinite;
-        }
-        @keyframes gradient-shift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .hero-noise {
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
-            background-repeat: repeat;
-        }
         .product-card .card-img {
             transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
@@ -50,21 +36,46 @@
     <th:block th:replace="~{layout/default :: header}" />
 
     <main class="flex-1">
-        <div class="relative overflow-hidden bg-black text-white hero-gradient-animate hero-noise">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14 md:py-20 relative z-10">
-                <div class="flex items-center justify-between animate-fade-in">
-                    <div>
-                        <h1 class="text-4xl sm:text-5xl md:text-6xl font-black leading-[0.95] tracking-tighter">
-                            나만의 스타일
-                        </h1>
-                        <p class="text-gray-400 text-sm md:text-base leading-relaxed max-w-md mt-4">
-                            트렌디한 스트릿 스타일부터 클래식까지. 당신만의 패션 감각을 표현하세요.
-                        </p>
-                    </div>
-                    <a href="#products" class="hidden sm:inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-black text-sm uppercase tracking-wide hover:bg-gray-100 transition-all flex-shrink-0">
-                        둘러보기 <i class="ri-arrow-right-line"></i>
-                    </a>
+        <!-- 히어로 — 둘러보기 버튼 없이 문구만 -->
+        <div class="relative overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 text-white">
+            <div class="absolute -top-16 -right-12 w-52 h-52 rounded-full bg-point-400/20 blur-2xl"></div>
+            <div class="absolute -bottom-20 -left-8 w-44 h-44 rounded-full bg-white/10 blur-2xl"></div>
+
+            <!-- 배너 높이 절반: py-14/20 → py-7/10, 제목도 한 단계씩 축소 -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-7 md:py-10 relative z-10">
+                <div class="animate-fade-in">
+                    <span class="inline-block px-2.5 py-0.5 rounded-full bg-point-500/30 text-point-100 text-[10px] font-bold tracking-wide mb-2">
+                        종합 쇼핑몰
+                    </span>
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-black leading-[1.1] tracking-tight">
+                        필요한 건<br class="sm:hidden"> 다 있는 <span class="text-point-400">3번가</span>
+                    </h1>
+                    <!-- 한 줄 유지: 줄바꿈 금지 + 좁은 화면은 글자 크기로 흡수한다 -->
+                    <p class="text-white/80 text-[10px] sm:text-xs md:text-sm mt-2 whitespace-nowrap">
+                        식품, 잡화, 생활용품까지 필요한 모든 것을 한 곳에서.
+                        결제하면 <span class="font-bold text-point-400">1% 포인트</span>가 바로 쌓여요.
+                    </p>
                 </div>
+            </div>
+        </div>
+
+        <!-- 상품 광고 슬라이드 — 실제 판매중 상품을 순환 노출한다 -->
+        <div id="promo-section" class="hidden max-w-7xl mx-auto px-4 sm:px-6 mt-10">
+            <div class="relative overflow-hidden rounded-2xl bg-brand-50 border border-brand-100">
+                <div id="promo-track" class="flex transition-transform duration-500 ease-out"></div>
+
+                <button onclick="movePromo(-1)" aria-label="이전 상품"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white
+                               shadow flex items-center justify-center text-brand-700 transition">
+                    <i class="ri-arrow-left-s-line text-xl"></i>
+                </button>
+                <button onclick="movePromo(1)" aria-label="다음 상품"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white
+                               shadow flex items-center justify-center text-brand-700 transition">
+                    <i class="ri-arrow-right-s-line text-xl"></i>
+                </button>
+
+                <div id="promo-dots" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2"></div>
             </div>
         </div>
 
@@ -72,44 +83,56 @@
 
             <div class="flex items-end justify-between mb-12">
                 <div>
-                    <h2 class="text-3xl md:text-4xl font-black text-gray-900 uppercase tracking-tight">신상품</h2>
+                    <h2 class="text-3xl md:text-4xl font-black text-sf-black tracking-tight">
+                        오늘의 <span class="text-brand-600">상품</span>
+                    </h2>
                     <p class="text-xs text-gray-500 mt-3 font-semibold">
-                        <span id="product-count" class="font-black text-gray-900">0</span> 개 상품
+                        <span id="product-count" class="font-black text-brand-600">0</span> 개 상품
                     </p>
                 </div>
             </div>
 
-            <div id="product-loading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div id="product-loading" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                 <div class="animate-fade-in" style="animation-delay:0.00s">
-                    <div class="skeleton skeleton-img aspect-[3/4] rounded-lg mb-3"></div>
+                    <div class="skeleton skeleton-img aspect-square rounded-lg mb-3"></div>
                     <div class="space-y-2">
                         <div class="skeleton skeleton-text w-2/3 h-3"></div>
                         <div class="skeleton skeleton-text-lg w-full h-4"></div>
-                        <div class="skeleton skeleton-text w-1/2 h-3"></div>
                     </div>
                 </div>
                 <div class="animate-fade-in" style="animation-delay:0.05s">
-                    <div class="skeleton skeleton-img aspect-[3/4] rounded-lg mb-3"></div>
+                    <div class="skeleton skeleton-img aspect-square rounded-lg mb-3"></div>
                     <div class="space-y-2">
                         <div class="skeleton skeleton-text w-2/3 h-3"></div>
                         <div class="skeleton skeleton-text-lg w-full h-4"></div>
-                        <div class="skeleton skeleton-text w-1/2 h-3"></div>
                     </div>
                 </div>
                 <div class="animate-fade-in" style="animation-delay:0.10s">
-                    <div class="skeleton skeleton-img aspect-[3/4] rounded-lg mb-3"></div>
+                    <div class="skeleton skeleton-img aspect-square rounded-lg mb-3"></div>
                     <div class="space-y-2">
                         <div class="skeleton skeleton-text w-2/3 h-3"></div>
                         <div class="skeleton skeleton-text-lg w-full h-4"></div>
-                        <div class="skeleton skeleton-text w-1/2 h-3"></div>
                     </div>
                 </div>
                 <div class="animate-fade-in" style="animation-delay:0.15s">
-                    <div class="skeleton skeleton-img aspect-[3/4] rounded-lg mb-3"></div>
+                    <div class="skeleton skeleton-img aspect-square rounded-lg mb-3"></div>
                     <div class="space-y-2">
                         <div class="skeleton skeleton-text w-2/3 h-3"></div>
                         <div class="skeleton skeleton-text-lg w-full h-4"></div>
-                        <div class="skeleton skeleton-text w-1/2 h-3"></div>
+                    </div>
+                </div>
+                <div class="animate-fade-in hidden sm:block" style="animation-delay:0.20s">
+                    <div class="skeleton skeleton-img aspect-square rounded-lg mb-3"></div>
+                    <div class="space-y-2">
+                        <div class="skeleton skeleton-text w-2/3 h-3"></div>
+                        <div class="skeleton skeleton-text-lg w-full h-4"></div>
+                    </div>
+                </div>
+                <div class="animate-fade-in hidden lg:block" style="animation-delay:0.25s">
+                    <div class="skeleton skeleton-img aspect-square rounded-lg mb-3"></div>
+                    <div class="space-y-2">
+                        <div class="skeleton skeleton-text w-2/3 h-3"></div>
+                        <div class="skeleton skeleton-text-lg w-full h-4"></div>
                     </div>
                 </div>
             </div>
@@ -117,10 +140,10 @@
             <div id="product-empty" class="hidden text-center py-20 animate-fade-in">
                 <i class="ri-inbox-2-line text-5xl text-gray-300 mb-4 inline-block"></i>
                 <p class="text-gray-500 font-medium text-lg">상품이 없습니다</p>
-                <p class="text-gray-400 text-sm mt-1">곧 새로운 상품이 입고됩니다</p>
+                <p class="text-gray-400 text-sm mt-1">다른 검색어로 찾아보세요</p>
             </div>
 
-            <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"></div>
+            <div id="product-grid" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4"></div>
         </div>
     </main>
 
@@ -128,64 +151,161 @@
     <th:block th:replace="~{layout/default :: scripts}" />
 
     <script>
+        // 원본 목록을 들고 있다가 검색어로 걸러서 다시 그린다
+        let allProducts = [];
+
         document.addEventListener('DOMContentLoaded', loadProducts);
 
         async function loadProducts() {
             try {
-                const products = await apiFetch('/api/products') || [];
+                allProducts = await apiFetch('/api/products') || [];
                 document.getElementById('product-loading').classList.add('hidden');
 
-                if (!products || products.length === 0) {
-                    document.getElementById('product-empty').classList.remove('hidden');
-                    return;
-                }
+                buildPromo(allProducts);
 
-                document.getElementById('product-count').textContent = products.length;
-
-                const grid = document.getElementById('product-grid');
-                grid.innerHTML = products.map((product, index) => {
-                    const v = getProductVisual(product.name);
-                    return `
-                    <div class="product-card rounded-2xl overflow-hidden animate-fade-in" style="animation-delay: ${index * 0.05}s">
-                        <a href="/products/${product.id}" class="block">
-                            <div class="relative aspect-[3/4] bg-gradient-to-br ${v.bg}" style="overflow:hidden">
-                                <div class="card-img w-full h-full flex items-center justify-center">
-                                    <i class="${v.icon} text-6xl ${v.color}"></i>
-                                </div>
-                                <div class="card-overlay absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent flex flex-col justify-end p-5">
-                                    ${product.stock > 0 && product.salesStatus === 'ON_SALE'
-                                        ? `<button onclick="event.preventDefault(); addToCart(${product.id})"
-                                            class="w-full py-3 bg-white text-black text-xs font-black uppercase tracking-wider rounded-full hover:bg-gray-100 transition-colors">
-                                            담기
-                                          </button>`
-                                        : ''
-                                    }
-                                </div>
-                                ${index < 3 ? '<span class="absolute top-3 left-3 text-[10px] font-black text-white bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded-full">신상</span>' : ''}
-                                ${product.salesStatus !== 'ON_SALE'
-                                    ? `<span class="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm"><span class="text-sm font-black text-gray-900 tracking-wider">${product.stock <= 0 ? '품절' : '판매종료'}</span></span>`
-                                    : product.stock <= 5 && product.stock > 0
-                                    ? '<span class="absolute top-3 right-3 text-[10px] font-black text-white bg-red-500/90 backdrop-blur-sm px-3 py-1.5 rounded-full">마감임박</span>'
-                                    : product.stock <= 0
-                                    ? '<span class="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm"><span class="text-sm font-black text-gray-900 tracking-wider">품절</span></span>'
-                                    : ''
-                                }
-                            </div>
-                        </a>
-                        <div class="card-info pt-4 px-1 pb-2">
-                            <a href="/products/${product.id}" class="block">
-                                <h3 class="text-sm font-semibold text-gray-900 line-clamp-1 leading-snug">${product.name}</h3>
-                            </a>
-                            <p class="mt-1 text-xs text-gray-400 line-clamp-1">${product.description || ''}</p>
-                            <p class="mt-2 text-base font-bold text-gray-900">${formatPrice(product.price)}<span class="text-xs font-normal text-gray-400 ml-0.5">원</span></p>
-                        </div>
-                    </div>
-                `}).join('');
+                // 검색어를 달고 들어온 경우(/?q=) 바로 필터를 적용한다
+                const q = new URLSearchParams(location.search).get('q');
+                renderProducts(q ? filterByKeyword(allProducts, q) : allProducts);
 
             } catch (e) {
                 document.getElementById('product-loading').classList.add('hidden');
                 showToast('상품을 불러올 수 없습니다', 'danger');
             }
+        }
+
+        // 상품명·설명·카테고리를 모두 훑는다
+        function filterByKeyword(products, q) {
+            const kw = q.trim().toLowerCase();
+            if (!kw) return products;
+            return products.filter(p =>
+                (p.name || '').toLowerCase().includes(kw) ||
+                (p.description || '').toLowerCase().includes(kw) ||
+                (p.category || '').toLowerCase().includes(kw)
+            );
+        }
+
+        // 헤더 검색창(submitSearch)이 호출하는 진입점
+        function filterProducts(q) {
+            renderProducts(filterByKeyword(allProducts, q));
+        }
+
+        function renderProducts(products) {
+            const grid = document.getElementById('product-grid');
+            const empty = document.getElementById('product-empty');
+            document.getElementById('product-count').textContent = products.length;
+
+            if (!products.length) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            grid.innerHTML = products.map((product, index) => {
+                const v = getProductVisual(product.name, product.category);
+                return `
+                <div class="product-card rounded-xl overflow-hidden animate-fade-in" style="animation-delay: ${index * 0.04}s">
+                    <a href="/products/${product.id}" class="block">
+                        <div class="relative aspect-square rounded-xl bg-gradient-to-br ${v.bg}" style="overflow:hidden">
+                            <div class="card-img w-full h-full flex items-center justify-center">
+                                <i class="${v.icon} text-4xl ${v.color}"></i>
+                            </div>
+                            <div class="card-overlay absolute inset-0 bg-gradient-to-t from-sf-black/70 via-transparent to-transparent flex flex-col justify-end p-2">
+                                ${product.stock > 0 && product.salesStatus === 'ON_SALE'
+                                    ? `<button onclick="event.preventDefault(); addToCart(${product.id})"
+                                        class="w-full py-1.5 bg-white text-brand-700 text-[11px] font-black tracking-wider rounded-full hover:bg-brand-50 transition-colors">
+                                        담기
+                                      </button>`
+                                    : ''
+                                }
+                            </div>
+                            ${index < 3 ? '<span class="absolute top-2 left-2 text-[9px] font-black text-white bg-brand-600/90 px-2 py-0.5 rounded-full">신상</span>' : ''}
+                            ${product.salesStatus !== 'ON_SALE'
+                                ? `<span class="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm"><span class="text-xs font-black text-sf-black tracking-wider">${product.stock <= 0 ? '품절' : '판매종료'}</span></span>`
+                                : product.stock <= 5 && product.stock > 0
+                                ? '<span class="absolute top-2 right-2 text-[9px] font-black text-sf-black bg-point-400/95 px-2 py-0.5 rounded-full">마감임박</span>'
+                                : ''
+                            }
+                        </div>
+                    </a>
+                    <div class="card-info pt-3 px-1 pb-2">
+                        ${v.cat ? `<span class="inline-block mb-1.5 px-2 py-0.5 rounded text-[9px] font-black ${v.chip}">${v.cat}</span>` : ''}
+                        <a href="/products/${product.id}" class="block">
+                            <h3 class="text-[13px] font-semibold text-sf-black line-clamp-1 leading-snug">${product.name}</h3>
+                        </a>
+                        <p class="mt-1.5 text-sm font-bold text-sf-black">${formatPrice(product.price)}<span class="text-[11px] font-normal text-gray-400 ml-0.5">원</span></p>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // ── 상품 광고 슬라이드 ─────────────────────────────
+        let promoItems = [], promoIndex = 0, promoTimer = null;
+
+        function buildPromo(products) {
+            // 판매중이고 재고 있는 상품만, 최대 4개까지 노출
+            promoItems = products.filter(p => p.salesStatus === 'ON_SALE' && p.stock > 0).slice(0, 4);
+            if (promoItems.length === 0) return;
+
+            document.getElementById('promo-track').innerHTML = promoItems.map(p => {
+                const v = getProductVisual(p.name, p.category);
+                return `
+                <a href="/products/${p.id}" class="w-full flex-shrink-0">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 items-center gap-6 px-8 sm:px-12 py-10">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="inline-block px-3 py-1 rounded-full bg-point-500 text-white text-[11px] font-bold">
+                                    오늘의 추천
+                                </span>
+                                ${v.cat ? `<span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${v.chip}">${v.cat}</span>` : ''}
+                            </div>
+                            <h3 class="text-2xl sm:text-3xl font-black text-sf-black leading-tight">${p.name}</h3>
+                            <p class="text-sm text-gray-500 mt-2 line-clamp-2">${p.description || ''}</p>
+                            <p class="mt-4 text-2xl font-black text-brand-700">
+                                ${formatPrice(p.price)}<span class="text-sm font-normal text-gray-400 ml-1">원</span>
+                            </p>
+                            <p class="mt-1 text-xs text-point-600 font-semibold">
+                                구매 시 ${formatPrice(Math.floor(p.price * 0.01))}P 적립
+                            </p>
+                        </div>
+                        <div class="hidden sm:flex justify-center">
+                            <div class="w-40 h-40 rounded-2xl bg-gradient-to-br ${v.bg} flex items-center justify-center">
+                                <i class="${v.icon} text-6xl ${v.color}"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>`;
+            }).join('');
+
+            document.getElementById('promo-dots').innerHTML = promoItems.map((_, i) =>
+                `<button onclick="goPromo(${i})" aria-label="${i + 1}번째 상품"
+                         class="promo-dot rounded-full transition-all"></button>`
+            ).join('');
+
+            document.getElementById('promo-section').classList.remove('hidden');
+            goPromo(0);
+            startPromoAuto();
+        }
+
+        function goPromo(i) {
+            if (promoItems.length === 0) return;
+            promoIndex = (i + promoItems.length) % promoItems.length;
+
+            document.getElementById('promo-track').style.transform = `translateX(-${promoIndex * 100}%)`;
+            document.querySelectorAll('.promo-dot').forEach((dot, idx) => {
+                dot.className = 'promo-dot rounded-full transition-all ' +
+                    (idx === promoIndex ? 'w-6 h-2 bg-brand-600' : 'w-2 h-2 bg-brand-200');
+            });
+        }
+
+        function movePromo(step) {
+            goPromo(promoIndex + step);
+            startPromoAuto();   // 수동 조작 시 자동 전환 타이머를 리셋한다
+        }
+
+        function startPromoAuto() {
+            clearInterval(promoTimer);
+            promoTimer = setInterval(() => goPromo(promoIndex + 1), 4000);
         }
 
         async function addToCart(productId) {

@@ -111,7 +111,7 @@
     // PaymentStatus enum(PENDING, COMPLETED, FAILED, CANCELLED, PARTIAL_REFUND, FULL_REFUND)에 맞춘 라벨/색상
     let currentOrder = null;
     const statusConfig = {
-        PENDING: { label: '결제 대기', color: 'text-amber-600 bg-amber-50' },
+        PENDING: { label: '결제 대기', color: 'text-point-600 bg-point-100' },
         COMPLETED: { label: '주문 확정', color: 'text-emerald-600 bg-emerald-50' },
         FAILED: { label: '결제 실패', color: 'text-red-600 bg-red-50' },
         CANCELLED: { label: '취소됨', color: 'text-gray-600 bg-gray-100' },
@@ -133,7 +133,7 @@
             currentOrder = order;
 
             document.getElementById('breadcrumb-id').textContent = `#${order.orderId}`;
-            document.title = `주문 #${order.orderId} | SpartaFashion`;
+            document.title = `주문 #${order.orderId} | 3번가`;
 
             document.getElementById('order-id-display').textContent = `주문번호 #${order.orderId}`;
             const sc = statusConfig[order.paymentStatus] || statusConfig.PENDING;
@@ -188,11 +188,16 @@
                         주문내역으로 돌아가기
                     </a>`;
 
-            if (order.status === 'PENDING') {
+            // OrderStatus enum은 PAYMENT_PENDING이다. 'PENDING'으로 비교하면 절대 안 걸린다.
+            // 결제대기 주문은 취소 API로 선차감된 재고까지 복구된다.
+            if (order.status === 'PAYMENT_PENDING') {
                 actions += `
-                        <span class="px-8 py-4 border-2 border-gray-200 text-gray-400 text-sm font-black text-center uppercase tracking-wide rounded-lg">
-                            결제 미완료 주문
-                        </span>`;
+                        <button onclick="cancelPendingOrder()" class="px-8 py-4 bg-slate-700 text-white text-sm font-black text-center tracking-wide rounded-lg hover:bg-slate-800 transition-all">
+                            주문 취소
+                        </button>
+                        <a href="/cart" class="px-8 py-4 bg-gradient-to-r from-brand-500 to-point-500 text-white text-sm font-black text-center tracking-wide rounded-lg hover:opacity-90 transition-all">
+                            다시 주문하기
+                        </a>`;
             } else if (order.paymentStatus === 'COMPLETED' || order.paymentStatus === 'PARTIAL_REFUND') {
                 actions += `
                         <button onclick="cancelCurrentOrder()" class="px-8 py-4 bg-red-600 text-white text-sm font-black text-center uppercase tracking-wide rounded-lg hover:bg-red-700 transition-all">
@@ -270,6 +275,21 @@
                 '<a href="/orders" class="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-semibold">' +
                 '<i class="ri-arrow-left-line"></i> 주문내역으로 돌아가기</a></div>';
         }
+    }
+
+    // 결제대기 주문 취소 — 주문 취소 + 결제 실패 + 선차감 재고 복구가 한 번에 처리된다.
+    // 결제 완료 주문의 환불(cancelCurrentOrder)과는 다른 API를 쓴다.
+    function cancelPendingOrder() {
+        if (!currentOrder) return;
+        showConfirm('주문을 취소하시겠습니까? 차감된 재고가 복구됩니다.', async () => {
+            try {
+                await apiFetch(`/api/orders/${currentOrder.orderId}/cancel`, { method: 'POST' });
+                showToast('주문이 취소되었습니다', 'success');
+                loadOrderDetail();
+            } catch (e) {
+                showToast('취소 실패: ' + e.message, 'danger');
+            }
+        });
     }
 
     let currentRefundPaymentId = null;
