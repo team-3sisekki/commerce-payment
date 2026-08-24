@@ -16,12 +16,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // JPQL을 사용하여 동적 쿼리를 처리
     // 파라미터가 null일 경우 해당 조건을 무시하는 패턴을 사용
     @Query("SELECT p FROM Product p WHERE " +
+            "(:keyword IS NULL OR p.name LIKE %:keyword% OR p.description LIKE %:keyword%) AND " +
             "(:category IS NULL OR p.category = :category) AND " +
             "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
             "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
             "(:salesStatus IS NULL OR p.salesStatus = :salesStatus) AND " +
             "(:isSoldOut IS NULL OR (:isSoldOut = true AND p.stock = 0) OR (:isSoldOut = false AND p.stock > 0))")
     Page<Product> findProductsByConditions(
+            @Param("keyword") String keyword,
             @Param("category") String category,
             @Param("minPrice") Integer minPrice,
             @Param("maxPrice") Integer maxPrice,
