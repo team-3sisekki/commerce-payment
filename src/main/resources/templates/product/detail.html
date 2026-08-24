@@ -39,7 +39,7 @@
                     </div>
 
                     <div class="w-full lg:w-1/2 flex flex-col justify-start">
-                        <p class="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-3 leading-none">SpartaFashion</p>
+                        <p class="text-[9px] text-brand-600 font-black tracking-widest mb-3 leading-none">3번가</p>
                         <h1 class="text-2xl lg:text-4xl font-black text-gray-900 leading-tight mb-4" id="product-name">상품명</h1>
 
                         <p class="text-gray-600 text-sm leading-relaxed mb-6" id="product-description">상품 설명이 여기에 표시됩니다</p>
@@ -117,9 +117,9 @@
                 document.getElementById('product-name').textContent = product.name;
                 document.getElementById('product-price').textContent = formatPrice(product.price);
                 document.getElementById('product-description').textContent = product.description || '';
-                document.title = product.name + ' | SpartaFashion';
+                document.title = product.name + ' | 3번가';
 
-                const v = getProductVisual(product.name);
+                const v = getProductVisual(product.name, product.category);
                 const imgContainer = document.getElementById('product-image-container');
                 imgContainer.className = imgContainer.className.replace(/from-\S+ to-\S+/, `${v.bg}`);
                 const icon = document.getElementById('product-icon');
