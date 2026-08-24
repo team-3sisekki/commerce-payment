@@ -11,12 +11,6 @@ import java.util.Optional;
 public interface RefundRepository extends JpaRepository<Refund, Long> {
 
     /**
-     * 환불 상세
-     */
-    @Query("SELECT r FROM Refund r JOIN FETCH r.refundItems WHERE r.id = :id")
-    Optional<Refund> findByIdWithItems(@Param("id") Long id);
-
-    /**
      * 특정 결제 건에 대한 전체 환불 내역
      */
     @Query("SELECT DISTINCT r FROM Refund r " +
