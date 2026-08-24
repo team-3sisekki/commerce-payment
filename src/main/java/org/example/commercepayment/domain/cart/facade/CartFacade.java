@@ -1,9 +1,10 @@
-package org.example.commercepayment.domain.cart.service;
+package org.example.commercepayment.domain.cart.facade;
 
 import lombok.RequiredArgsConstructor;
 import org.example.commercepayment.domain.cart.dto.AddCartRequest;
 import org.example.commercepayment.domain.cart.entity.Cart;
 import org.example.commercepayment.domain.cart.entity.CartItem;
+import org.example.commercepayment.domain.cart.service.CartService;
 import org.example.commercepayment.domain.member.service.MemberService;
 import org.example.commercepayment.domain.product.entity.Product;
 import org.example.commercepayment.domain.product.service.ProductService;

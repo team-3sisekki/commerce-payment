@@ -6,6 +6,7 @@ import org.example.commercepayment.domain.product.dto.ProductPageResponse;
 import org.example.commercepayment.domain.product.dto.ProductResponse;
 import org.example.commercepayment.domain.product.dto.ProductSearchRequest;
 import org.example.commercepayment.domain.product.service.ProductService;
+import org.example.commercepayment.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,13 +18,13 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<ProductPageResponse> list(@Valid @ModelAttribute ProductSearchRequest request) {
+    public ResponseEntity<ApiResponse<ProductPageResponse>> list(@Valid @ModelAttribute ProductSearchRequest request) {
         ProductPageResponse response = productService.getProducts(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> detail(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.findById(id));
+    public ResponseEntity<ApiResponse<ProductResponse>> detail(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(productService.findById(id)));
     }
 }
