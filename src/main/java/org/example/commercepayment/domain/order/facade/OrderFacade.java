@@ -12,6 +12,7 @@ import org.example.commercepayment.domain.order.entity.OrderStatus;
 import org.example.commercepayment.domain.order.service.OrderService;
 import org.example.commercepayment.domain.payment.entity.FailReason;
 import org.example.commercepayment.domain.payment.entity.Payment;
+import org.example.commercepayment.domain.payment.service.PaymentCommandService;
 import org.example.commercepayment.domain.payment.service.PaymentService;
 import org.example.commercepayment.domain.product.entity.Product;
 import org.example.commercepayment.domain.product.repository.ProductRepository;
@@ -36,6 +37,7 @@ public class OrderFacade {
     private final MemberService memberService;
     private final OrderService orderService;
     private final PaymentService paymentService;
+    private final PaymentCommandService paymentCommandService;
     private final ProductRepository productRepository;
 
     // 주문서 미리보기_읽기 전용 + DB 변경 X
@@ -109,24 +111,37 @@ public class OrderFacade {
     }
 
     // 주문 취소
+//    @Transactional
+//    public void cancelOrder(Long memberId, Long orderId) {
+//        Order order = orderService.findOrderEntity(orderId);
+//        validateOwner(order, memberId);
+//
+//        // 결제 대기 아닌거 거르기
+//        if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
+//            throw new BusinessException(ErrorCode.ORDER_NOT_CANCELABLE);
+//        }
+//
+//        // 상태 전이_취소된 주문은 막힘
+//        order.transitTo(OrderStatus.CANCELED);
+//        Payment payment = paymentService.findByOrderId(orderId); 
+//        paymentService.failPayment(payment, FailReason.USER_CANCELLED); // 메서드명 변경 필요
+//
+//        // 선차감 재고 복구
+//        order.getOrderItems().forEach(item ->
+//                item.getProduct().restoreStock(item.getQuantity()));
+//    }
+
     @Transactional
     public void cancelOrder(Long memberId, Long orderId) {
         Order order = orderService.findOrderEntity(orderId);
         validateOwner(order, memberId);
 
-        // 결제 대기 아닌거 거르기
         if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
             throw new BusinessException(ErrorCode.ORDER_NOT_CANCELABLE);
         }
 
-        // 상태 전이_취소된 주문은 막힘
-        order.transitTo(OrderStatus.CANCELED);
-        Payment payment = paymentService.findByOrderId(orderId); 
-        paymentService.failPayment(payment, FailReason.USER_CANCELLED); // 메서드명 변경 필요
-
-        // 선차감 재고 복구
-        order.getOrderItems().forEach(item ->
-                item.getProduct().restoreStock(item.getQuantity()));
+        // Order 상태 전이, Payment 실패 처리, 포인트 복구, 재고 복구까지 한 번에
+        paymentCommandService.failPaymentAndOrder(orderId, FailReason.USER_CANCELLED);
     }
 
     // 조회
