@@ -158,7 +158,8 @@
 
         async function loadProducts() {
             try {
-                allProducts = await apiFetch('/api/products') || [];
+                const productsResponse = await apiFetch('/api/products');
+                allProducts = productsResponse?.data || [];
                 document.getElementById('product-loading').classList.add('hidden');
 
                 buildPromo(allProducts);
