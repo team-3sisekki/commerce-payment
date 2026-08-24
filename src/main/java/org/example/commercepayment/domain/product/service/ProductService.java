@@ -23,7 +23,7 @@ public class ProductService {
 
     public ProductPageResponse getProducts(ProductSearchRequest request, Pageable pageable) {
         Page<Product> productPage = productRepository.findProductsByConditions(
-                request.category(), request.minPrice(), request.maxPrice(),
+                request.keyword(), request.category(), request.minPrice(), request.maxPrice(),
                 request.salesStatus(), request.isSoldOut(), pageable
         );
 
