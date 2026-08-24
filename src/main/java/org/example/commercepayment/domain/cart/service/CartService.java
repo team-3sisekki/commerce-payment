@@ -35,19 +35,13 @@ public class CartService {
 
         if (existing.isPresent()) {
             CartItem found = existing.get();
-
-            if (found.getProduct().getStock() < found.getQuantity() + cartItem.getQuantity()) {
-                throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
-            }
-
+            found.getProduct().validateStockAvailable(found.getQuantity() + cartItem.getQuantity());
             found.addQuantity(cartItem.getQuantity());
+
             return found.getId();
 
         } else { // 2-B. 장바구니에 없는 완전히 새로운 상품을 담는 경우
-
-            if (cartItem.getProduct().getStock() < cartItem.getQuantity()) {
-                throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
-            }
+            cartItem.getProduct().validateStockAvailable(cartItem.getQuantity());
 
             return cartItemRepository.save(cartItem).getId();
         }
@@ -61,9 +55,7 @@ public class CartService {
                 .filter(ci -> ci.getMemberId().equals(memberId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
 
-        if (item.getProduct().getStock() < quantity) {
-            throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
-        }
+        item.getProduct().validateStockAvailable(quantity);
 
         item.changeQuantity(quantity);
     }
