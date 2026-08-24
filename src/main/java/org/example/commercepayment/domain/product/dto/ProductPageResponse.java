@@ -2,6 +2,7 @@ package org.example.commercepayment.domain.product.dto;
 
 import org.example.commercepayment.domain.product.entity.Product;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -18,12 +19,17 @@ public record ProductPageResponse(
             int totalPages
     ) {}
 
-    public static ProductPageResponse of(Page<Product> productPage, int page, int size) {
+    public static ProductPageResponse of(Page<Product> productPage, Pageable pageable) {
         List<ProductResponse> data = productPage.getContent().stream()
                 .map(ProductResponse::from)
                 .toList();
 
-        PageInfo pageInfo = new PageInfo(page, size, productPage.getTotalElements(), productPage.getTotalPages());
+        PageInfo pageInfo = new PageInfo(
+                pageable.getPageNumber() + 1,
+                pageable.getPageSize(),
+                productPage.getTotalElements(),
+                productPage.getTotalPages()
+        );
 
         return new ProductPageResponse(data, pageInfo);
     }
