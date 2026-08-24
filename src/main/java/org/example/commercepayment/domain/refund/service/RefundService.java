@@ -59,11 +59,8 @@ public class RefundService {
         Map<Long, Integer> remainQuantities = calculateRemainQuantities(payment.getOrder().getOrderItems());
 
         return payment.getOrder().getOrderItems().stream()
-                .map(item -> new RefundableItemResponse(
-                        item.getId(),
-                        item.getProductName(),
-                        item.getOrderPrice(),
-                        item.getQuantity(),
+                .map(item -> RefundableItemResponse.from(
+                        item,
                         remainQuantities.getOrDefault(item.getId(), 0)
                 ))
                 .toList();
@@ -301,17 +298,11 @@ public class RefundService {
     }
 
     private RefundRequest buildFullRefundRequest(Payment payment, String reason) {
-        List<Long> itemIds = payment.getOrder().getOrderItems().stream()
-                .map(OrderItem::getId)
-                .toList();
-
-        Map<Long, Long> refundedMap = refundItemRepository.findRefundedQuantitiesByOrderItemIds(itemIds).stream()
-                .collect(toMap(RefundedQuantityDto::orderItemId, RefundedQuantityDto::refundedQuantity));
+        Map<Long, Integer> remainQuantities = calculateRemainQuantities(payment.getOrder().getOrderItems());
 
         List<RefundItemRequest> items = payment.getOrder().getOrderItems().stream()
                 .map(orderItem -> {
-                    int refunded = refundedMap.getOrDefault(orderItem.getId(), 0L).intValue();
-                    int remaining = orderItem.getQuantity() - refunded;
+                    int remaining = remainQuantities.getOrDefault(orderItem.getId(), 0);
                     return remaining > 0 ? new RefundItemRequest(orderItem.getId(), remaining) : null;
                 })
                 .filter(Objects::nonNull)
