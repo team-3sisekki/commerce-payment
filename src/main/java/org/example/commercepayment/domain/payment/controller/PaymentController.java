@@ -22,8 +22,6 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentFacade paymentFacade;
-    private final PaymentService paymentService;
-    private final PaymentCommandService paymentCommandService;
 
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse<PaymentConfirmResponse>> confirm(
@@ -35,19 +33,12 @@ public class PaymentController {
 
     @PostMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<PaymentCancelResponse>> cancel(
+            @AuthenticationPrincipal Long memberId,
             @PathVariable Long id,
             @Valid @RequestBody(required = false) PaymentCancelRequest request
     ) {
-        Payment payment = paymentService.findByIdWithOrder(id);
-        paymentCommandService.failPaymentAndOrder(payment.getOrder().getId(), FailReason.USER_CANCELLED);
-
-        Payment updated = paymentService.findByIdWithOrder(id);
-
-        String message = (request != null && request.reason() != null && !request.reason().isBlank())
-                ? request.reason()
-                : "결제가 취소되었습니다.";
-
-        return ResponseEntity.ok(ApiResponse.ok(PaymentCancelResponse.from(updated, message)));
+        return ResponseEntity.ok(
+                ApiResponse.ok(paymentFacade.cancelPayment(memberId, id, request)));
     }
 
     @PostMapping("/{id}/fail")
@@ -55,9 +46,7 @@ public class PaymentController {
             @PathVariable Long id,
             @RequestBody FailRequest request
     ) {
-        Payment payment = paymentService.findByIdWithOrder(id);
-        paymentService.failPayment(payment, request.failReason());
-        return ResponseEntity.ok(ApiResponse.ok(PaymentCancelResponse.from(payment, "결제가 실패 처리되었습니다.")));
+        return ResponseEntity.ok(ApiResponse.ok(paymentFacade.failPayment(id, request.failReason())));
     }
 
     public record FailRequest(FailReason failReason) {}
