@@ -130,9 +130,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/cart",
+							"raw": "{{baseUrl}}/api/carts",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart"]
+							"path": ["api", "carts"]
 						}
 					}
 				},
@@ -167,9 +167,9 @@
 							"raw": "{\n  \"productId\": {{productId}},\n  \"quantity\": 2\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cart/items",
+							"raw": "{{baseUrl}}/api/carts/items",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart", "items"]
+							"path": ["api", "carts", "items"]
 						}
 					}
 				},
@@ -188,9 +188,9 @@
 							"raw": "{\n  \"productId\": 6,\n  \"quantity\": 1\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cart/items",
+							"raw": "{{baseUrl}}/api/carts/items",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart", "items"]
+							"path": ["api", "carts", "items"]
 						}
 					}
 				},
@@ -209,9 +209,9 @@
 							"raw": "{\n  \"quantity\": 3\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+							"raw": "{{baseUrl}}/api/carts/items/{{cartItemId}}",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart", "items", "{{cartItemId}}"]
+							"path": ["api", "carts", "items", "{{cartItemId}}"]
 						}
 					}
 				},
@@ -230,9 +230,9 @@
 							"raw": "{\n  \"quantity\": 0\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+							"raw": "{{baseUrl}}/api/carts/items/{{cartItemId}}",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart", "items", "{{cartItemId}}"]
+							"path": ["api", "carts", "items", "{{cartItemId}}"]
 						}
 					}
 				},
@@ -242,9 +242,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+							"raw": "{{baseUrl}}/api/carts/items/{{cartItemId}}",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart", "items", "{{cartItemId}}"]
+							"path": ["api", "carts", "items", "{{cartItemId}}"]
 						}
 					}
 				},
@@ -254,9 +254,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/cart/items/999",
+							"raw": "{{baseUrl}}/api/carts/items/999",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart", "items", "999"]
+							"path": ["api", "carts", "items", "999"]
 						}
 					}
 				},
@@ -266,9 +266,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/cart",
+							"raw": "{{baseUrl}}/api/carts",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "cart"]
+							"path": ["api", "carts"]
 						}
 					}
 				}
