@@ -69,7 +69,7 @@ public class PaymentService {
     // 결제 완료 처리
     @Transactional
     public void completePayment(Payment payment, int accruedPoint) {
-        
+
         payment.complete(accruedPoint);
     }
 
@@ -90,5 +90,10 @@ public class PaymentService {
         return paymentRepository.findByOrderIdIn(orderIds).stream()
                 .collect(Collectors.toMap(p -> p.getOrder().getId(), p -> p));
     }
-    
+
+    public Payment findByOrderIdWithOrderForUpdate(Long orderId) {
+        return paymentRepository.findByOrderIdWithOrderForUpdate(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
 }

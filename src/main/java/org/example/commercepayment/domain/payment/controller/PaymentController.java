@@ -1,14 +1,18 @@
 package org.example.commercepayment.domain.payment.controller;
 
+import org.example.commercepayment.domain.payment.dto.PaymentCancelRequest;
+import org.example.commercepayment.domain.payment.dto.PaymentCancelResponse;
 import org.example.commercepayment.domain.payment.dto.PaymentConfirmRequest;
 import org.example.commercepayment.domain.payment.dto.PaymentConfirmResponse;
 import org.example.commercepayment.domain.payment.entity.FailReason;
 import org.example.commercepayment.domain.payment.entity.Payment;
 import org.example.commercepayment.domain.payment.facade.PaymentFacade;
+import org.example.commercepayment.domain.payment.service.PaymentCommandService;
 import org.example.commercepayment.domain.payment.service.PaymentService;
 import org.example.commercepayment.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,35 +22,31 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentFacade paymentFacade;
-    private final PaymentService paymentService;
 
     @PostMapping("/confirm")
-    public ApiResponse<PaymentConfirmResponse> confirm(
-            @AuthenticationPrincipal Long memberId,  
+    public ResponseEntity<ApiResponse<PaymentConfirmResponse>> confirm(
+            @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody PaymentConfirmRequest request
     ) {
-        return ApiResponse.ok(paymentFacade.confirmPayment(memberId, request));
+        return ResponseEntity.ok(ApiResponse.ok(paymentFacade.confirmPayment(memberId, request)));
     }
-    
-
 
     @PostMapping("/{id}/cancel")
-    public ApiResponse<Void> cancel(@PathVariable Long id) {
-        Payment payment = paymentService.findByIdWithOrder(id);
-        if (payment.getPgAmount() == 0 && payment.getAmount() == 0) {
-        }
-        paymentService.cancelPayment(payment);
-        return ApiResponse.ok(null);
+    public ResponseEntity<ApiResponse<PaymentCancelResponse>> cancel(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) PaymentCancelRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(paymentFacade.cancelPayment(memberId, id, request)));
     }
 
     @PostMapping("/{id}/fail")
-    public ApiResponse<Void> fail(
+    public ResponseEntity<ApiResponse<PaymentCancelResponse>> fail(
             @PathVariable Long id,
             @RequestBody FailRequest request
     ) {
-        Payment payment = paymentService.findByIdWithOrder(id);
-        paymentService.failPayment(payment, request.failReason());
-        return ApiResponse.ok(null);
+        return ResponseEntity.ok(ApiResponse.ok(paymentFacade.failPayment(id, request.failReason())));
     }
 
     public record FailRequest(FailReason failReason) {}
