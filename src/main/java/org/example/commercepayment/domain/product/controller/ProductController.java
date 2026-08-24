@@ -7,6 +7,9 @@ import org.example.commercepayment.domain.product.dto.ProductResponse;
 import org.example.commercepayment.domain.product.dto.ProductSearchRequest;
 import org.example.commercepayment.domain.product.service.ProductService;
 import org.example.commercepayment.global.response.ApiResponse;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,8 +21,10 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<ProductPageResponse>> list(@Valid @ModelAttribute ProductSearchRequest request) {
-        ProductPageResponse response = productService.getProducts(request);
+    public ResponseEntity<ApiResponse<ProductPageResponse>> list(
+            @Valid @ModelAttribute ProductSearchRequest request,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        ProductPageResponse response = productService.getProducts(request, pageable);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
