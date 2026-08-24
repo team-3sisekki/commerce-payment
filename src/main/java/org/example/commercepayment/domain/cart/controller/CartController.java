@@ -6,7 +6,7 @@ import org.example.commercepayment.domain.cart.dto.AddCartRequest;
 import org.example.commercepayment.domain.cart.dto.AddCartResponse;
 import org.example.commercepayment.domain.cart.dto.CartResponse;
 import org.example.commercepayment.domain.cart.dto.UpdateCartRequest;
-import org.example.commercepayment.domain.cart.service.CartFacade;
+import org.example.commercepayment.domain.cart.facade.CartFacade;
 import org.example.commercepayment.domain.cart.service.CartService;
 import org.example.commercepayment.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
