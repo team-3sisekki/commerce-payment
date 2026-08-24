@@ -16,7 +16,6 @@ import java.util.Map;
 @Component
 public class RefundCalculator {
 
-    // 계산 결과를 담아서 한 번에 돌려주는 전용 DTO
     public record RefundCalculationResult(
             List<RefundItem> refundItems,
             int totalPgRefundAmount,
@@ -24,7 +23,6 @@ public class RefundCalculator {
             int pointRecoveryAmount
     ) {}
 
-    // 서비스가 계산을 위임할 때 호출하는 메인 메서드! 복잡한 금액 계산 처리
     public RefundCalculationResult calculate(
             RefundRequest request,
             Map<Long, OrderItem> orderItemMap,
@@ -91,8 +89,8 @@ public class RefundCalculator {
             int accumulatedPointItemRefund = 0;
             int accumulatedPgItemRefund = 0;
 
-            for (RefundItemRequest itemReq : subList) {
-                RefundItem refundItem = allocateByRatio(itemReq, orderItemMap, payment);
+            for (RefundItemRequest requestItem : subList) {
+                RefundItem refundItem = allocateByRatio(requestItem, orderItemMap, payment);
                 accumulatedPointItemRefund += refundItem.getPointRefundAmount();
                 accumulatedPgItemRefund += refundItem.getPgRefundAmount();
                 items.add(refundItem);
@@ -114,8 +112,8 @@ public class RefundCalculator {
 
         } else {
             // [분기 B 부분 환불]
-            for (RefundItemRequest itemReq : requestItems) {
-                items.add(allocateByRatio(itemReq, orderItemMap, payment));
+            for (RefundItemRequest requestItem : requestItems) {
+                items.add(allocateByRatio(requestItem, orderItemMap, payment));
             }
         }
         return items;
@@ -124,10 +122,10 @@ public class RefundCalculator {
     /**
      * 아이템 1개의 금액을 비율로 계산 (내림 처리 및 잔돈 가산)
      */
-    private RefundItem allocateByRatio(RefundItemRequest itemReq, Map<Long, OrderItem> orderItemMap, Payment payment) {
-        OrderItem orderItem = orderItemMap.get(itemReq.orderItemId());
+    private RefundItem allocateByRatio(RefundItemRequest requestItem, Map<Long, OrderItem> orderItemMap, Payment payment) {
+        OrderItem orderItem = orderItemMap.get(requestItem.orderItemId());
         // 이번에 환불할 상품의 순수 금액 (상품 1개 가격 × 환불 수량)
-        int itemTotal = orderItem.getOrderPrice() * itemReq.requestQuantity();
+        int itemTotal = orderItem.getOrderPrice() * requestItem.requestQuantity();
         int orderTotal = payment.getOrder().getTotalAmount();
 
         // 포인트와 PG 결제액을 '전체 결제 비율'에 맞춰 쪼갠다 (소수점 내림 처리)
@@ -142,7 +140,7 @@ public class RefundCalculator {
 
         return RefundItem.builder()
                 .orderItem(orderItem)
-                .refundQuantity(itemReq.requestQuantity())
+                .refundQuantity(requestItem.requestQuantity())
                 .pointRefundAmount(itemPointRefundAmount)
                 .pgRefundAmount(itemPgRefundAmount)
                 .build();

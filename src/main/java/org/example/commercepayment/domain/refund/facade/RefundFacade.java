@@ -19,23 +19,20 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RefundFacade {
 
-    private final RefundService refundService;
-    private final PaymentService paymentService;
     private final PaymentGateway paymentGateway;
+    private final PaymentService paymentService;
+    private final RefundService refundService;
 
     public RefundResponse processRefund(Long memberId, RefundRequest request) {
         log.info("========== [환불 파사드 진입] ==========");
         log.info("결제ID={}, 회원ID={}, 취소사유={}", request.paymentId(), memberId, request.cancelReason());
 
         /*PG 선검증*/
-        // 1. 결제 단건 조회
         Payment payment = paymentService.findByIdWithOrder(request.paymentId());
 
-        // 2. PG사 결제 내역 조회 및 상태 검증 (단, PG 결제액이 0원인 전액 포인트 결제는 스킵)
         if (payment.getPgAmount() > 0) {
             PaymentGatewayResponse pgResponse = paymentGateway.getPayment(payment.getPortonePaymentId());
 
-            // 3. 환불액 정합성 검증 (DB 잔액 vs PG 잔액)
             int pgRemainingAmount = pgResponse.totalAmount() - pgResponse.cancelledAmount();
             log.info("PG 환불 잔액 = {}", pgRemainingAmount);
             int dbRemainingAmount = payment.getPgAmount() - refundService.getRefundedPgAmount(payment.getId());
@@ -68,7 +65,7 @@ public class RefundFacade {
             }
         }
 
-        // 6. 결과 갱신
+        /* 결과 갱신*/
         refundService.updateRefundResult(savedRefund.getId(), isPgSuccess);
         return RefundResponse.from(savedRefund);
     }

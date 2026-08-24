@@ -55,7 +55,7 @@ public class PortOneClient implements PaymentGateway {
                 portOneRestClient.post()
                         .uri("/payments/{paymentId}/cancel", paymentId)
                         .header("Idempotency-Key", "\"" + idempotencyKey + "\"") // 같은 키 유지
-                        .body(new PortOneCancelRequest(reason, portOneProperties.getStoreId()))
+                        .body(new PortOneCancelRequest(amount, reason, portOneProperties.getStoreId()))
                         .retrieve()
                         .toBodilessEntity();
                 return;  // 성공하면 종료
