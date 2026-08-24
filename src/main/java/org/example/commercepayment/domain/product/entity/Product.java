@@ -62,6 +62,13 @@ public class Product extends BaseTimeEntity {
         }
     }
 
+    // 요청 수량이 현재 재고를 초과하지 않는지 검증
+    public void validateStockAvailable(int requestedQuantity) {
+        if (this.stock < requestedQuantity) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
+        }
+    }
+
     // 비즈니스 로직: 재고 변경 시 자동으로 상태 업데이트
     public void deductStock(int quantity) {
         if (quantity <= 0) {
