@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹훅 이벤트 내역</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+<!-- Header -->
+<header class="bg-gray-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+        <div class="text-lg font-bold flex items-center gap-2">
+            <i class="ri-shield-flash-line text-blue-400"></i>
+            내 결제 웹훅 모니터링
+        </div>
+        <div id="user-info" class="text-sm text-gray-300 font-medium">
+            <!-- 로그인 회원 정보 출력 -->
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-10">
+    <div class="mb-8 flex justify-between items-end">
+        <div>
+            <h1 class="text-2xl font-black text-gray-900 tracking-tight">웹훅 이벤트 내역</h1>
+            <p class="text-gray-500 mt-1 text-sm font-medium">내 주문/결제건에 대해 수신된 실시간 웹훅 기록입니다.</p>
+        </div>
+        <button onclick="loadWebhooks()" class="px-4 py-2 bg-white border border-gray-200 text-sm font-bold rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2 transition-colors">
+            <i class="ri-refresh-line"></i> 새로고침
+        </button>
+    </div>
+
+    <div id="webhook-loading" class="space-y-4">
+        <div class="skeleton w-full h-24 rounded-xl"></div>
+        <div class="skeleton w-full h-24 rounded-xl"></div>
+        <div class="skeleton w-full h-24 rounded-xl"></div>
+    </div>
+
+    <div id="webhook-error" class="hidden text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <i class="ri-error-warning-line text-5xl text-red-300 mb-4 inline-block"></i>
+        <p class="text-gray-600 font-medium" id="error-message">데이터를 불러오지 못했습니다.</p>
+    </div>
+
+    <div id="webhook-empty" class="hidden text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <i class="ri-inbox-2-line text-5xl text-gray-300 mb-4 inline-block"></i>
+        <p class="text-gray-500 font-medium text-lg">웹훅 이벤트 내역이 없습니다</p>
+    </div>
+
+    <div id="webhook-list" class="space-y-4 hidden">
+        <!-- 웹훅 항목 렌더링 영역 -->
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', loadWebhooks);
+
+    async function loadWebhooks() {
+        document.getElementById('webhook-loading').classList.remove('hidden');
+        document.getElementById('webhook-list').classList.add('hidden');
+        document.getElementById('webhook-empty').classList.add('hidden');
+        document.getElementById('webhook-error').classList.add('hidden');
+
+        try {
+            const token = localStorage.getItem('token'); // ← 실제 로그인 코드의 저장 키와 맞춰야 함
+
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch('/api/webhooks', { headers });
+
+            if (!response.ok) {
+                throw new Error(`서버 에러 (HTTP ${response.status})`);
+            }
+
+            const result = await response.json();
+            const webhooks = result.data || result; // ApiResponse 구조 대응
+
+            document.getElementById('webhook-loading').classList.add('hidden');
+
+            if (!webhooks || webhooks.length === 0) {
+                document.getElementById('webhook-empty').classList.remove('hidden');
+                return;
+            }
+
+            const listContainer = document.getElementById('webhook-list');
+            listContainer.classList.remove('hidden');
+
+            listContainer.innerHTML = webhooks.map((event, index) => {
+                const statusColor = getStatusColor(event.status);
+                const typeLabel = getFriendlyType(event.eventType);
+                const typeColor = getTypeColor(typeLabel);
+                return `
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all animate-fade-in" style="animation-delay: ${index * 0.05}s">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded-md ${statusColor}">
+                                            ${event.status}
+                                        </span>
+                                        <span class="px-2.5 py-1 text-[11px] font-bold rounded-md border ${typeColor}">
+                                            ${typeLabel}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">Webhook ID: ${event.webhookId}</div>
+                                </div>
+                                <div class="text-left md:text-right bg-gray-50 px-4 py-3 rounded-lg min-w-[200px]">
+                                    <div class="text-[11px] text-gray-500 leading-relaxed">
+                                        수신: ${formatDate(event.createdAt)}<br>
+                                        처리: ${event.processedAt ? formatDate(event.processedAt) : '-'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+
+        } catch (e) {
+            document.getElementById('webhook-loading').classList.add('hidden');
+            const errDiv = document.getElementById('webhook-error');
+            errDiv.classList.remove('hidden');
+            document.getElementById('error-message').textContent = e.message || '데이터를 불러올 수 없습니다.';
+        }
+    }
+
+    // WebhookHandler에서 저장하는 eventType은 PortOne SDK의 클래스명
+    // (예: "WebhookTransactionPaid", "WebhookTransactionCancelledCancelled")이므로,
+    // 화면에는 보기 좋은 짧은 이름으로 매핑해서 보여준다.
+    function getFriendlyType(eventType) {
+        if (!eventType) return 'Unknown';
+        if (eventType.includes('Paid')) return 'Paid';
+        if (eventType.includes('Cancelled')) return 'Cancelled';
+        if (eventType.includes('Ready')) return 'Ready';
+        if (eventType.includes('Failed')) return 'Failed';
+        return eventType;
+    }
+
+    function getTypeColor(typeLabel) {
+        switch (typeLabel) {
+            case 'Paid': return 'bg-blue-50 text-blue-600 border-blue-200';
+            case 'Cancelled': return 'bg-orange-50 text-orange-600 border-orange-200';
+            case 'Ready': return 'bg-gray-50 text-gray-500 border-gray-200';
+            case 'Failed': return 'bg-red-50 text-red-600 border-red-200';
+            default: return 'bg-gray-50 text-gray-500 border-gray-200';
+        }
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case 'PROCESSED': return 'bg-green-100 text-green-700';
+            case 'RECEIVED': return 'bg-blue-100 text-blue-700';
+            case 'IGNORED': return 'bg-gray-100 text-gray-600';
+            case 'FAILED': return 'bg-red-100 text-red-700';
+            default: return 'bg-gray-100 text-gray-700';
+        }
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        try {
+            if (Array.isArray(dateString)) {
+                const [year, month, day, hour, minute, second] = dateString;
+                return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second || 0).padStart(2, '0')}`;
+            }
+            const date = new Date(dateString);
+            return date.toLocaleString('ko-KR', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false
+            });
+        } catch(e) {
+            return dateString;
+        }
+    }
+</script>
+</body>
+</html>

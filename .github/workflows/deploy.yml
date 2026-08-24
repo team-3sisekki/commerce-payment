@@ -67,17 +67,21 @@ jobs:
           PORTONE_API_SECRET: ${{ secrets.PORTONE_API_SECRET }}
           PORTONE_STORE_ID: ${{ secrets.PORTONE_STORE_ID }}
           PORTONE_CHANNEL_KEY: ${{ secrets.PORTONE_CHANNEL_KEY }}
+          PORTONE_WEBHOOK_SECRET: ${{ secrets.PORTONE_WEBHOOK_SECRET }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_USERNAME, DOCKER_REPO_NAME, SHORT_SHA, DB_URL, DB_USERNAME, DB_PASSWORD, PORTONE_API_SECRET, PORTONE_STORE_ID, PORTONE_CHANNEL_KEY
+          envs: DOCKER_USERNAME, DOCKER_REPO_NAME, SHORT_SHA, DB_URL, DB_USERNAME, DB_PASSWORD, PORTONE_API_SECRET, PORTONE_STORE_ID, PORTONE_CHANNEL_KEY, PORTONE_WEBHOOK_SECRET
           script: |
             # 1. 시스템 업데이트 및 도커 설치 (Amazon Linux 2023 기준)
             sudo dnf update -y
             sudo dnf install -y docker
             sudo systemctl enable docker
             sudo systemctl start docker
+            
+            # EC2 호스트 타임존 한국 시간(KST)으로 고정
+            sudo timedatectl set-timezone Asia/Seoul
             
             # 2. 최신 이미지 Pull (Public Repo 가정)
             DOCKER_IMAGE="$DOCKER_USERNAME/$DOCKER_REPO_NAME:$SHORT_SHA"
@@ -87,8 +91,9 @@ jobs:
             sudo docker stop spring-app || true
             sudo docker rm spring-app || true
             
-            # 4. 새 컨테이너 실행 (환경변수 주입)
+            # 4. 새 컨테이너 실행 (환경변수 및 타임존 주입)
             sudo docker run -d --name spring-app -p 8080:8080 --restart unless-stopped \
+              -e TZ=Asia/Seoul \
               -e SPRING_PROFILES_ACTIVE=prod \
               -e DB_URL=$DB_URL \
               -e DB_USERNAME=$DB_USERNAME \
@@ -96,6 +101,7 @@ jobs:
               -e PORTONE_API_SECRET=$PORTONE_API_SECRET \
               -e PORTONE_STORE_ID=$PORTONE_STORE_ID \
               -e PORTONE_CHANNEL_KEY=$PORTONE_CHANNEL_KEY \
+              -e PORTONE_WEBHOOK_SECRET=$PORTONE_WEBHOOK_SECRET \
               $DOCKER_IMAGE
             
             # 5. 사용하지 않는 도커 이미지 청소

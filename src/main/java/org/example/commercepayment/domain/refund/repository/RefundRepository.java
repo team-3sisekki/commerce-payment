@@ -11,15 +11,15 @@ import java.util.Optional;
 public interface RefundRepository extends JpaRepository<Refund, Long> {
 
     /**
-     * 환불 상세
-     */
-    @Query("SELECT r FROM Refund r JOIN FETCH r.refundItems WHERE r.id = :id")
-    Optional<Refund> findByIdWithItems(@Param("id") Long id);
-
-    /**
      * 특정 결제 건에 대한 전체 환불 내역
      */
-    List<Refund> findByPaymentId(Long paymentId);
+    @Query("SELECT DISTINCT r FROM Refund r " +
+           "JOIN FETCH r.refundItems ri " +
+           "JOIN FETCH ri.orderItem oi " +
+           "JOIN FETCH oi.product p " +
+           "WHERE r.payment.id = :paymentId " +
+           "ORDER BY r.createdAt DESC")
+    List<Refund> findByPaymentIdWithItems(@Param("paymentId") Long paymentId);
 
     /**
      * 특정 결제 건에 대해 이미 완료된 총 PG 환불 금액
@@ -29,10 +29,6 @@ public interface RefundRepository extends JpaRepository<Refund, Long> {
             "WHERE r.payment.id = :paymentId " +
             "AND r.status = 'COMPLETED'")
     int sumRefundedPgAmountByPaymentId(@Param("paymentId") Long paymentId);
-    
-    /**
-     * 특정 결제 건에 대해 이미 완료된 총 포인트 환불 금액
-     */
-    @Query("SELECT COALESCE(SUM(r.pointRefundAmount), 0) FROM Refund r WHERE r.payment.id = :paymentId AND r.status = 'COMPLETED'")
-    int sumRefundedPointAmountByPaymentId(@Param("paymentId") Long paymentId);
+
+
 }

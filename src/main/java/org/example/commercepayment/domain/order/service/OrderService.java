@@ -25,7 +25,11 @@ public class OrderService {
     // 주문 생성. 재고 선차감은 OrderFacade가 이미 끝낸 상태
     @Transactional
     public Order createOrder(Member member, List<OrderItem> orderItems, int usePoint) {
-        Order order = new Order(member, orderItems, usePoint);
+        Order order = Order.builder()
+                .member(member)
+                .orderItems(orderItems)
+                .usedPoint(usePoint).build();
+
         return orderRepository.save(order);
     }
 
@@ -43,29 +47,10 @@ public class OrderService {
     // Order -> OrderResponse 변환, OrderItem -> OrderItemResponse 변환
     public OrderResponse toResponse(Order order, Payment payment) {
         List<OrderItemResponse> items = order.getOrderItems().stream()
-                .map(oi -> new OrderItemResponse(
-                        oi.getId(),
-                        oi.getProduct().getId(),
-                        oi.getProductName(),
-                        oi.getOrderPrice(),
-                        oi.getQuantity(),
-                        oi.getSubtotal()
-                ))
+                .map(OrderItemResponse::from)
                 .toList();
 
-        return new OrderResponse(
-                order.getId(),
-                order.getOrderNumber(),
-                payment.getId(),
-                order.getTotalAmount(),
-                order.getUsedPoint(),
-                payment.getPgAmount(),
-                payment.getEarnedPointAmount(), //메서드명 변경
-                order.getStatus().name(),
-                payment.getStatus().name(),
-                order.getOrderName(),
-                order.getCreatedAt(),
-                items);
+        return OrderResponse.from(order, payment);
     }
 
     // paymentId로 주문 조회_환불용

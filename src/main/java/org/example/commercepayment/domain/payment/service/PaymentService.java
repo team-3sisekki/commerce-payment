@@ -46,6 +46,21 @@ public class PaymentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 
+    public Payment findByIdWithOrderAndItems(Long paymentId) {
+        return paymentRepository.findByIdWithOrderAndItems(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
+    public Payment findForRefund(Long paymentId) {
+        // 1. Payment 단독 락 획득 (이중 환불 차단)
+        paymentRepository.findByIdForRefundLockOnly(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 2. 락 없이 순수하게 연관 데이터 통째로 조회 (N+1 방지)
+        return paymentRepository.findByIdWithOrderAndItems(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
     public Payment findByPortonePaymentId(String portonePaymentId) {
         return paymentRepository.findByPortonePaymentId(portonePaymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
@@ -54,6 +69,7 @@ public class PaymentService {
     // 결제 완료 처리
     @Transactional
     public void completePayment(Payment payment, int accruedPoint) {
+
         payment.complete(accruedPoint);
     }
 
@@ -74,4 +90,10 @@ public class PaymentService {
         return paymentRepository.findByOrderIdIn(orderIds).stream()
                 .collect(Collectors.toMap(p -> p.getOrder().getId(), p -> p));
     }
+
+    public Payment findByOrderIdWithOrderForUpdate(Long orderId) {
+        return paymentRepository.findByOrderIdWithOrderForUpdate(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
 }

@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import org.example.commercepayment.domain.order.entity.OrderItem;
 import org.example.commercepayment.global.entity.BaseTimeEntity;
 
+import org.example.commercepayment.global.error.BusinessException;
+import org.example.commercepayment.global.error.ErrorCode;
+
 @Entity
 @Getter
 @Table(name = "refund_items")
@@ -35,27 +38,16 @@ public class RefundItem extends BaseTimeEntity {
     @Column(name = "pg_refund_amount", nullable = false)
     private int pgRefundAmount;
 
-    // 생성자 및 빌더는 private으로 캡슐화
-    @Builder(access = AccessLevel.PRIVATE)
+    @Builder
     private RefundItem(OrderItem orderItem, int refundQuantity, int pointRefundAmount, int pgRefundAmount) {
+        if (refundQuantity <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_QUANTITY);
+        }
+        
         this.orderItem = orderItem;
         this.refundQuantity = refundQuantity;
         this.pointRefundAmount = pointRefundAmount;
         this.pgRefundAmount = pgRefundAmount;
-    }
-
-    // 정적 팩토리 메서드를 통해서만 객체 생성
-    public static RefundItem create(OrderItem orderItem, int refundQuantity, int pointRefundAmount, int pgRefundAmount) {
-        if (refundQuantity <= 0) {
-            throw new IllegalArgumentException("환불 수량은 1개 이상이어야 합니다.");
-        }
-        
-        return RefundItem.builder()
-                .orderItem(orderItem)
-                .refundQuantity(refundQuantity)
-                .pointRefundAmount(pointRefundAmount)
-                .pgRefundAmount(pgRefundAmount)
-                .build();
     }
 
     // 연관관계 편의 메서드 (Refund 엔티티에서 호출)

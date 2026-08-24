@@ -4,7 +4,7 @@
 <th:block th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${title} + ' | SpartaFashion'">SpartaFashion</title>
+    <title th:text="${title} + ' | 3번가'">3번가</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,11 +13,22 @@
             theme: {
                 extend: {
                     colors: {
+                        // 기본 톤 — 深청록 계열
                         sf: {
-                            black: '#111111',
-                            dark: '#1a1a1a',
-                            accent: '#E8344E',
-                            cream: '#FAFAF8',
+                            black: '#134E4A',
+                            dark: '#0B302E',
+                            accent: '#0D9488',
+                            cream: '#F0FDFA',
+                        },
+                        // 메인: 청록
+                        brand: {
+                            50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4',
+                            500: '#14B8A6', 600: '#0D9488', 700: '#0F766E',
+                        },
+                        // 강조: 골드
+                        point: {
+                            100: '#F7EFD5', 400: '#DFC873',
+                            500: '#C9A227', 600: '#A8861C',
                         }
                     },
                     fontFamily: {
@@ -46,25 +57,34 @@
 <th:block th:fragment="header">
     <div class="bg-sf-black text-white py-2 overflow-hidden">
         <div class="flex animate-marquee whitespace-nowrap">
-            <span class="text-[11px] font-light tracking-wider px-8">신규 회원가입 시 10% 할인 쿠폰 즉시 지급</span>
+            <span class="text-[11px] font-light tracking-wider px-8">결제 금액의 <b class="text-point-400">1%</b> 포인트 즉시 적립</span>
             <span class="text-[11px] font-light tracking-wider px-8">3만원 이상 구매 시 무료배송</span>
-            <span class="text-[11px] font-light tracking-wider px-8">2026 S/S 신상품 입고</span>
+            <span class="text-[11px] font-light tracking-wider px-8">식품·잡화·전자제품·생활용품 한 곳에서</span>
             <span class="text-[11px] font-light tracking-wider px-8">평일 오후 2시 이전 주문 당일 출고</span>
             <span class="text-[11px] font-light tracking-wider px-8">7일 이내 무료 교환·반품</span>
-            <span class="text-[11px] font-light tracking-wider px-8">카드 결제 시 최대 12개월 무이자 할부</span>
+            <span class="text-[11px] font-light tracking-wider px-8">포인트는 결제 시 1P 단위로 사용 가능</span>
         </div>
     </div>
 
     <header class="sf-header sticky top-0 z-50 bg-white border-b border-gray-100" id="main-header">
         <div class="max-w-[1280px] mx-auto px-4 sm:px-6">
             <div class="flex items-center justify-between h-16">
-                <a href="/" class="flex items-center gap-1 group">
-                    <span class="text-xl font-light tracking-wider text-sf-black">SPARTA</span>
-                    <span class="text-xl font-black tracking-wider text-sf-black">FASHION</span>
+                <a href="/" class="flex items-center gap-1.5 group flex-shrink-0">
+                    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-600 to-brand-700 text-white
+                                 flex items-center justify-center text-lg font-black">3</span>
+                    <span class="text-xl font-black tracking-tight text-sf-black">번가</span>
                 </a>
 
-                <nav class="hidden md:flex items-center gap-12">
-                </nav>
+                <!-- 상품 검색 — 홈이면 그 자리에서 필터링, 아니면 홈으로 이동한다 -->
+                <form onsubmit="return submitSearch(event)" class="flex-1 max-w-md mx-4 sm:mx-8 hidden sm:block">
+                    <div class="relative">
+                        <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base"></i>
+                        <input type="text" id="search-input" autocomplete="off"
+                               placeholder="어떤 상품을 찾으세요?"
+                               class="w-full pl-9 pr-4 py-2 text-sm bg-brand-50 border border-brand-100 rounded-full
+                                      focus:outline-none focus:border-brand-500 focus:bg-white transition-colors">
+                    </div>
+                </form>
 
                 <div class="flex items-center gap-4">
                     <a href="/cart" id="nav-cart" onclick="return handleCartClick()"
@@ -86,6 +106,10 @@
                             <div class="px-4 py-3 border-b border-gray-100">
                                 <p class="text-sm font-semibold text-sf-black" id="user-name">사용자</p>
                                 <p class="text-xs text-gray-500 mt-0.5" id="user-email">email</p>
+                                <div class="mt-2 pt-2 border-t border-gray-50 flex items-center justify-between">
+                                    <span class="text-xs text-gray-500">보유 포인트</span>
+                                    <span class="text-xs font-bold text-sf-accent"><span id="user-points">0</span> P</span>
+                                </div>
                             </div>
                             <a href="/orders" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-sf-cream transition-colors">
                                 <i class="ri-file-list-3-line text-gray-400"></i> 주문내역
@@ -121,8 +145,8 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
                         <div>
                     <div class="flex items-center gap-1 mb-6">
-                        <span class="text-lg font-light tracking-wider">SPARTA</span>
-                        <span class="text-lg font-black tracking-wider">FASHION</span>
+                        <span class="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center text-base font-black">3</span>
+                        <span class="text-lg font-black tracking-tight">번가</span>
                     </div>
                     <p class="text-sm font-light text-gray-300 leading-relaxed">
                         트렌디한 패션을 합리적인 가격에.<br>
@@ -151,7 +175,7 @@
 
             <div class="border-t border-gray-800 pt-8">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p class="text-xs font-light text-gray-500">&copy; 2026 SpartaFashion. All rights reserved.</p>
+                    <p class="text-xs font-light text-gray-500">&copy; 2026 3번가. All rights reserved.</p>
                 </div>
             </div>
         </div>
@@ -230,8 +254,24 @@
             return true;
         }
 
-        function toggleUserDropdown() {
-            document.getElementById('user-menu').classList.toggle('hidden');
+        async function toggleUserDropdown() {
+            const menu = document.getElementById('user-menu');
+            const isHidden = menu.classList.contains('hidden');
+            
+            // 1. 메뉴를 클릭하자마자 바로 열거나 닫음 (UI 즉각 반응)
+            menu.classList.toggle('hidden');
+            
+            // 2. 메뉴가 열리는 타이밍이라면, 백그라운드에서 포인트를 조회하여 렌더링
+            if (isHidden && isLoggedIn()) {
+                try {
+                    const pointRes = await apiFetch('/api/points/balance');
+                    if (pointRes && pointRes.balance !== undefined) {
+                        document.getElementById('user-points').textContent = formatPrice(pointRes.balance);
+                    }
+                } catch (e) {
+                    console.error('포인트 조회 실패:', e);
+                }
+            }
         }
 
         function toggleMobileMenu() {
@@ -372,27 +412,77 @@
             document.addEventListener('keydown', onKey);
         }
 
-        const _productVisuals = [
-            { keywords: ['티셔츠', 'tee', 't-shirt'],    icon: 'ri-t-shirt-line',     bg: 'from-sky-50 to-blue-100',     color: 'text-sky-300' },
-            { keywords: ['데님', '팬츠', 'denim'],         icon: 'ri-scissors-cut-line', bg: 'from-indigo-50 to-indigo-100', color: 'text-indigo-300' },
-            { keywords: ['니트', 'knit', '스웨터'],         icon: 'ri-t-shirt-2-line',   bg: 'from-amber-50 to-orange-100',  color: 'text-amber-300' },
-            { keywords: ['카고', '조거'],                    icon: 'ri-compass-3-line',   bg: 'from-emerald-50 to-green-100', color: 'text-emerald-300' },
-            { keywords: ['백', 'bag', '크로스백'],          icon: 'ri-handbag-line',     bg: 'from-rose-50 to-pink-100',     color: 'text-rose-300' },
-            { keywords: ['스니커즈', '운동화', '러닝'],      icon: 'ri-footprint-line',   bg: 'from-orange-50 to-red-100',    color: 'text-orange-300' },
-            { keywords: ['코트', 'coat', '재킷'],           icon: 'ri-shirt-line',       bg: 'from-gray-100 to-slate-200',   color: 'text-gray-400' },
-            { keywords: ['치노', 'chino', '슬랙스'],        icon: 'ri-palette-line',     bg: 'from-violet-50 to-purple-100', color: 'text-violet-300' },
-            { keywords: ['캡', '모자', '볼캡', 'hat'],      icon: 'ri-graduation-cap-line', bg: 'from-yellow-50 to-amber-100', color: 'text-yellow-400' },
-        ];
-        const _defaultVisual = { icon: 'ri-shopping-bag-line', bg: 'from-gray-50 to-gray-100', color: 'text-gray-300' };
+        // 카테고리 4종 색상 — 식품 연빨강 / 잡화 회색 / 전자제품 파랑 / 생활용품 노랑
+        const _catStyle = {
+            '식품':     { bg: 'from-red-50 to-red-100',     color: 'text-red-400',
+                          chip: 'bg-red-50 text-red-500' },
+            '잡화':     { bg: 'from-gray-100 to-gray-200',  color: 'text-gray-500',
+                          chip: 'bg-gray-100 text-gray-600' },
+            '전자제품': { bg: 'from-blue-50 to-blue-100',   color: 'text-blue-500',
+                          chip: 'bg-blue-50 text-blue-600' },
+            '생활용품': { bg: 'from-amber-50 to-amber-100', color: 'text-amber-500',
+                          chip: 'bg-amber-50 text-amber-600' }
+        };
+        // 카테고리를 못 찾았을 때는 브랜드 색(청록)으로 떨어진다
+        const _catFallback = { bg: 'from-brand-50 to-brand-200', color: 'text-brand-600',
+                               chip: 'bg-brand-50 text-brand-600' };
 
-        function getProductVisual(productName) {
-            if (!productName) return _defaultVisual;
-            const name = productName.toLowerCase();
+        // 상품명 키워드 → 아이콘 + 소속 카테고리. 색상은 카테고리가 결정한다.
+        const _productVisuals = [
+            { cat: '식품',     keywords: ['사과', '딸기', '토마토', '수박', '과일'],   icon: 'ri-apple-line' },
+            { cat: '식품',     keywords: ['바나나', '레몬', '망고', '오렌지', '채소'], icon: 'ri-plant-line' },
+            { cat: '식품',     keywords: ['커피', '아메리카노', '라떼', '음료', '차'], icon: 'ri-cup-line' },
+            { cat: '식품',     keywords: ['케이크', '디저트', '빵', '쿠키', '과자'],   icon: 'ri-cake-3-line' },
+            { cat: '식품',     keywords: ['우유', '치즈', '요거트', '유제품'],         icon: 'ri-goblet-line' },
+            { cat: '식품',     keywords: ['라면', '쌀', '김치', '식품', '즉석'],       icon: 'ri-restaurant-line' },
+            { cat: '잡화',     keywords: ['굿즈', '한정판', '피규어'],                 icon: 'ri-gift-line' },
+            { cat: '잡화',     keywords: ['도서', '책', '노트', '문구', '펜'],         icon: 'ri-book-2-line' },
+            { cat: '잡화',     keywords: ['의류', '티셔츠', '옷', '신발', '모자'],     icon: 'ri-t-shirt-line' },
+            { cat: '잡화',     keywords: ['가방', '백', '지갑', '파우치'],             icon: 'ri-handbag-line' },
+            { cat: '전자제품', keywords: ['전자', '가전', '충전', '이어폰', '헤드폰'], icon: 'ri-plug-line' },
+            { cat: '전자제품', keywords: ['노트북', '키보드', '마우스', '모니터'],     icon: 'ri-computer-line' },
+            { cat: '전자제품', keywords: ['폰', '스마트', '태블릿', '워치'],           icon: 'ri-smartphone-line' },
+            { cat: '생활용품', keywords: ['생활', '세제', '휴지', '주방', '세탁'],     icon: 'ri-home-4-line' },
+            { cat: '생활용품', keywords: ['수건', '침구', '베개', '이불', '수납'],     icon: 'ri-archive-line' },
+        ];
+        const _defaultVisual = { cat: '', icon: 'ri-shopping-bag-line' };
+
+        // 아이콘은 상품명으로, 색상은 카테고리로 정한다.
+        // DB category 값이 4종 중 하나면 그 값을 우선하고, 없으면 상품명에서 추론한다.
+        function getProductVisual(productName, category) {
+            const name = (productName || '').toLowerCase();
+
+            let matched = _defaultVisual;
             for (const v of _productVisuals) {
-                if (v.keywords.some(k => name.includes(k))) return v;
+                if (v.keywords.some(k => name.includes(k))) { matched = v; break; }
             }
-            return _defaultVisual;
+
+            const cat = _catStyle[category] ? category : matched.cat;
+            const style = _catStyle[cat] || _catFallback;
+
+            return { icon: matched.icon, cat: cat || '', ...style };
         }
+
+        // 검색 — 홈이면 그 자리에서 필터링, 다른 페이지면 홈으로 이동한다
+        function submitSearch(e) {
+            e.preventDefault();
+            const q = (document.getElementById('search-input')?.value || '').trim();
+
+            if (location.pathname === '/' && typeof filterProducts === 'function') {
+                filterProducts(q);
+                history.replaceState(null, '', q ? '/?q=' + encodeURIComponent(q) : '/');
+            } else {
+                location.href = q ? '/?q=' + encodeURIComponent(q) : '/';
+            }
+            return false;
+        }
+
+        // 다른 페이지에서 검색해 넘어온 경우 입력창에 검색어를 채워준다
+        document.addEventListener('DOMContentLoaded', function () {
+            const q = new URLSearchParams(location.search).get('q');
+            const input = document.getElementById('search-input');
+            if (q && input) input.value = q;
+        });
     </script>
 </th:block>
 

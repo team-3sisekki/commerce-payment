@@ -2,6 +2,7 @@ package org.example.commercepayment.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.commercepayment.global.entity.BaseTimeEntity;
@@ -32,6 +33,7 @@ public class Member extends BaseTimeEntity {
     @Column(nullable = false)
     private int point = 0; // 신규가입 시 0P로 시작
 
+    @Builder
     public Member(String email, String password, String name, String phoneNumber) {
         this.email = email;
         this.password = password;

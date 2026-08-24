@@ -12,7 +12,7 @@
 
                 <div class="text-center mb-12">
                     <h1 class="text-4xl font-light text-gray-900 mb-3 tracking-widest uppercase letter-spacing-2">로그인</h1>
-                    <p class="text-sm text-gray-500 tracking-wide">SpartaFashion 계정으로 로그인</p>
+                    <p class="text-sm text-gray-500 tracking-wide">3번가 계정으로 로그인</p>
                 </div>
 
                 <form id="login-form" onsubmit="handleLogin(event)">
@@ -43,15 +43,7 @@
                     <a href="/signup" class="text-gray-900 font-medium hover:underline mt-1 inline-block">회원가입</a>
                 </div>
 
-                <div class="mt-10 pt-8 border-t border-gray-200">
-                    <p class="text-[11px] font-medium text-gray-500 mb-4 uppercase tracking-widest">테스트 계정 (비밀번호: sparta1234)</p>
-                    <div>
-                        <button type="button" onclick="fillTestAccount('sparta@nbcamp.com')"
-                                class="w-full py-2.5 bg-white border border-gray-300 rounded-sm text-xs text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-all font-medium uppercase tracking-wider">
-                            르탄이
-                        </button>
-                    </div>
-                </div>
+
             </div>
         </div>
     </main>
@@ -75,11 +67,6 @@
                 localStorage.removeItem('member');
                 updateAuthUI();
             }
-        }
-
-        function fillTestAccount(email) {
-            document.getElementById('email').value = email;
-            document.getElementById('password').value = 'sparta1234';
         }
 
         async function handleLogin(e) {
