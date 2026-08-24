@@ -16,9 +16,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-/**
- * PortOne 웹훅 처리 핸들러
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -65,8 +62,10 @@ public class WebhookHandler {
         // 이 웹훅 이벤트를 어떤 결제와 연결된 것인지 기록 (회원별 웹훅 조회에 사용)
         webhookEventService.attachPaymentId(eventId, payment.getId());
 
-        if (pg.totalAmount() != payment.getAmount()) {
-            webhookEventService.markFailed(eventId, "금액 불일치: db=" + payment.getAmount() + ", pg=" + pg.totalAmount());
+        if (pg.totalAmount() != payment.getPgAmount()) {
+            webhookEventService.markFailed(
+                    eventId, "금액 불일치: db=" + payment.getPgAmount() + ", pg=" + pg.totalAmount()
+            );
             return;
         }
 
@@ -79,10 +78,6 @@ public class WebhookHandler {
 
     /**
      * 결제 취소(Transaction.Cancelled) 웹훅 처리
-     *
-     * PG측(관리자 콘솔 수동취소, 카드사 역행취소 등)에서 이미 완료된 취소를
-     * 우리 DB(재고, 포인트, 환불 이력)와 동기화한다. 실제 취소 요청은 이미 PG쪽에서
-     * 끝난 상태이므로, 환불 도메인의 계산/기록 로직만 재사용하고 PG 재호출은 하지 않는다.
      */
     private void handleCancel(Long eventId, String portonePaymentId) {
         PaymentGatewayResponse pg = paymentGateway.getPayment(portonePaymentId);
