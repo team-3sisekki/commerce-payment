@@ -14,7 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/cart") // URL은 팀 규칙에 맞게 /api/carts 로 복수형을 쓰셔도 좋습니다.
+@RequestMapping("/api/carts")
 @RequiredArgsConstructor
 
 public class CartController {

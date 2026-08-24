@@ -312,7 +312,7 @@
         async function addToCart(productId) {
             if (!requireAuth()) return;
             try {
-                await apiFetch('/api/cart/items', {
+                await apiFetch('/api/carts/items', {
                     method: 'POST',
                     body: JSON.stringify({ productId: productId, quantity: 1 })
                 });

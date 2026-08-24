@@ -87,7 +87,7 @@
 
         async function loadCart() {
             try {
-                const cart = await apiFetch('/api/cart');
+                const cart = await apiFetch('/api/carts');
                 const items = cart.items;
                 document.getElementById('cart-loading').classList.add('hidden');
 
@@ -192,7 +192,7 @@
                 return;
             }
             try {
-                await apiFetch(`/api/cart/items/${cartItemId}`, {
+                await apiFetch(`/api/carts/items/${cartItemId}`, {
                     method: 'PATCH',
                     body: JSON.stringify({ quantity: newQty })
                 });
@@ -202,7 +202,7 @@
 
         async function removeItem(cartItemId) {
             try {
-                await apiFetch(`/api/cart/items/${cartItemId}`, { method: 'DELETE' });
+                await apiFetch(`/api/carts/items/${cartItemId}`, { method: 'DELETE' });
                 loadCart();
             } catch (e) { showToast(e.message, 'danger'); }
         }

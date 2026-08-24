@@ -193,7 +193,7 @@
             btn.innerHTML = '<div class="spinner"></div>';
 
             try {
-                await apiFetch('/api/cart/items', {
+                await apiFetch('/api/carts/items', {
                     method: 'POST',
                     body: JSON.stringify({ productId, quantity })
                 });
