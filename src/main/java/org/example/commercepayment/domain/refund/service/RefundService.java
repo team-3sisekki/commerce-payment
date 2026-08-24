@@ -3,7 +3,6 @@ package org.example.commercepayment.domain.refund.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.commercepayment.domain.order.entity.OrderStatus;
-import org.example.commercepayment.domain.payment.entity.PaymentStatus;
 import org.example.commercepayment.domain.refund.dto.RefundHistoryResponse;
 import org.example.commercepayment.domain.refund.dto.RefundRequest;
 import org.example.commercepayment.domain.refund.dto.RefundRequest.RefundItemRequest;
@@ -39,23 +38,21 @@ public class RefundService {
 
     private final PointService pointService;
     private final PaymentService paymentService;
+    private final ProductService productService;
+    private final RefundCalculator refundCalculator;
     private final RefundRepository refundRepository;
     private final RefundItemRepository refundItemRepository;
-    private final RefundCalculator refundCalculator;
-    private final ProductService productService;
+
+
 
     /**
      * 환불 가능한 상품 목록 및 남은 수량 조회 (사용자 화면 출력용)
      */
     @Transactional(readOnly = true)
     public List<RefundableItemResponse> getRefundableItems(Long memberId, Long paymentId) {
-        /* 환불하려는 원본 결제 및 주문 상품 정보 조회*/
         Payment payment = paymentService.findByIdWithOrderAndItems(paymentId);
-
-        /* 본인 소유 주문 여부 확인 */
         validatePaymentOwnership(payment, memberId);
 
-        /* 상품별로 '아직 환불받을 수 있는 진짜 남은 수량'을 한 번에 계산*/
         Map<Long, Integer> remainQuantities = calculateRemainQuantities(payment.getOrder().getOrderItems());
 
         return payment.getOrder().getOrderItems().stream()
@@ -70,18 +67,15 @@ public class RefundService {
      * 주문 상품들의 '잔여 환불 가능 수량'을 일괄 계산
      */
     private Map<Long, Integer> calculateRemainQuantities(List<OrderItem> orderItems) {
-        // 1. 환불하려는 상품들의 ID(번호)만 따로 모아서 리스트로 만든다.
         List<Long> itemIds = orderItems.stream().map(OrderItem::getId).toList();
         if (itemIds.isEmpty()) return Map.of();
 
-        // 2. 환불하려는 모든 상품의 '지금까지 이미 환불된 누적 수량'을 한 번에 조회 > 찾기 쉽게 Map 형태로 변경 (상품ID:누적 환불 수량)
         Map<Long, Long> refundedMap = refundItemRepository.findRefundedQuantitiesByOrderItemIds(itemIds).stream()
                 .collect(toMap(
                         RefundedQuantityDto::orderItemId,
                         RefundedQuantityDto::refundedQuantity
                 ));
 
-        // 3. 아직 환불받을 수 있는 진짜 남은 수량 = (최초 주문 수량 - 기존 환불 수량) 계산하여 Map 반환
         return orderItems.stream().collect(toMap(
                 OrderItem::getId,
                 item -> item.getQuantity() - refundedMap.getOrDefault(item.getId(), 0L).intValue()
@@ -110,47 +104,35 @@ public class RefundService {
         log.info("========== [환불 처리 시작] ==========");
         log.info("요청 정보: 결제ID={}, 회원ID={}, 환불상품갯수={}", request.paymentId(), memberId, request.items().size());
 
-        /* 환불, 상품, 상품조회 쿼리에 락 설정*/
         Payment payment = paymentService.findForRefund(request.paymentId());
-
-        /* 과거 환불 내역 한 번에 전부 조회*/
         List<Refund> existingRefunds = refundRepository.findByPaymentIdWithItems(request.paymentId());
 
         /* 5초 이내에 동일한 결제건으로 환불된 내역이 있는지 확인 (메모리에서 처리)*/
         boolean isDuplicated = existingRefunds.stream()
-                .anyMatch(r -> r.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(5)));
+                .anyMatch(refund -> refund.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(5)));
         if (isDuplicated) {
             throw new BusinessException(ErrorCode.DUPLICATE_REFUND_REQUEST);
         }
 
-        /* 본인 소유 주문 여부 확인 */
         validatePaymentOwnership(payment, memberId);
+        payment.validateRefundable();
 
-        /* 결제 상태(완료/부분환불) 확인*/
-        if (payment.getStatus() != PaymentStatus.COMPLETED
-                && payment.getStatus() != PaymentStatus.PARTIAL_REFUND) {
-            throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
-        }
-
-        /* 성공한 환불 건만 필터링*/
         List<Refund> completedRefunds = existingRefunds.stream()
-                .filter(r -> r.getStatus() == RefundStatus.COMPLETED)
+                .filter(refund -> refund.getStatus() == RefundStatus.COMPLETED)
                 .toList();
 
         /* 환불 대상 상품의 잔여 환불 가능 수량 초과 여부 확인*/
-        // 1. 모든 상품의 '원본 정보(최초 주문 수량 등)'를 한 번에 조회 > 찾기 쉽게 Map(사전) 형태로 변경 (상품ID:상품 정보)
         Map<Long, OrderItem> orderItemMap = payment.getOrder().getOrderItems().stream()
-                .collect(toMap(OrderItem::getId, item -> item));
+                .collect(toMap(OrderItem::getId, orderItem -> orderItem));
 
-        // 2. 메모리에서 상품별 잔여 환불 가능 수량 합산 계산
         Map<Long, Integer> refundedQuantityMap = completedRefunds.stream()
-                .flatMap(r -> r.getRefundItems().stream())
+                .flatMap(refund -> refund.getRefundItems().stream())
                 .collect(Collectors.groupingBy(
-                        ri -> ri.getOrderItem().getId(),
-                        java.util.stream.Collectors.summingInt(RefundItem::getRefundQuantity)
+                        refundItem -> refundItem.getOrderItem().getId(),
+                        Collectors.summingInt(RefundItem::getRefundQuantity)
                 ));
 
-        // 3. 잔여 수량 검증
+
         for (RefundItemRequest item : request.items()) {
             if (!orderItemMap.containsKey(item.orderItemId())) {
                 throw new BusinessException(ErrorCode.REFUND_ITEM_NOT_FOUND);
@@ -187,7 +169,6 @@ public class RefundService {
         int refundedPointAmount = completedRefunds.stream().mapToInt(Refund::getPointRefundAmount).sum();
         int refundedPointRecoveryAmount = completedRefunds.stream().mapToInt(Refund::getPointRecoveryAmount).sum();
 
-        /* RefundCalculator에게 복잡한 계산을 통째로 위임해서 결과만 받아온다! (refundedPointRecoveryAmount 인자 추가)*/
         RefundCalculator.RefundCalculationResult calcResult = refundCalculator.calculate(
                 request, orderItemMap, payment, isFullRefund, refundedPgAmount, refundedPointAmount, refundedPointRecoveryAmount
         );
@@ -201,8 +182,6 @@ public class RefundService {
             payment.partialRefund();
         }
 
-        // 재고 롤백 시 갱신 손실(Lost Update)과 데드락을 막기 위해 
-        // 상품 ID 순서대로 락 획득 (DB에 쿼리만 날리면 영속성 컨텍스트에 락이 적용됨)
         List<Long> productIdsToRestore = request.items().stream()
                 .map(itemReq -> orderItemMap.get(itemReq.orderItemId()).getProduct().getId())
                 .distinct()
@@ -213,10 +192,10 @@ public class RefundService {
             productService.findAllByIdForUpdate(productIdsToRestore);
         }
 
-        // 환불된 상품 재고 수량 원복 (+)
+        /*환불된 상품 재고 수량 원복 (+)*/
         restoreStocks(request, orderItemMap);
 
-        // 사용 포인트를 복구해주고, 적립해준 포인트를 회수한다.
+       /* 사용 포인트를 복구해주고, 적립해준 포인트를 회수한다.*/
         if (calcResult.totalPointRefundAmount() > 0) {
             pointService.restoreUse(payment.getOrder().getMemberId(), payment, calcResult.totalPointRefundAmount());
         }
@@ -224,7 +203,6 @@ public class RefundService {
             pointService.revokeEarn(payment.getOrder().getMemberId(), payment, calcResult.pointRecoveryAmount());
         }
 
-        // 환불(Refund) 내역(부모) 생성
         Refund refund = Refund.builder()
                 .payment(payment)
                 .cancelReason(request.cancelReason())
@@ -235,7 +213,6 @@ public class RefundService {
 
         Refund savedRefund = refundRepository.save(refund);
 
-        // 환불 아이템(RefundItem) 내역(자식) 넣기
         for (RefundItem refundItem : calcResult.refundItems()) {
             savedRefund.addRefundItem(refundItem);
         }
@@ -256,15 +233,14 @@ public class RefundService {
      * 재고 복구 처리
      */
     private void restoreStocks(RefundRequest request, Map<Long, OrderItem> orderItemMap) {
-        for (RefundItemRequest itemReq : request.items()) {
-            orderItemMap.get(itemReq.orderItemId()).getProduct().restoreStock(itemReq.requestQuantity());
+        for (RefundItemRequest requestItem : request.items()) {
+            orderItemMap.get(requestItem.orderItemId()).getProduct().restoreStock(requestItem.requestQuantity());
         }
     }
 
     /**
      * 현재 DB 상에서 이미 환불된 PG 금액 총합 반환
      */
-    @Transactional(readOnly = true)
     public int getRefundedPgAmount(Long paymentId) {
         return refundRepository.sumRefundedPgAmountByPaymentId(paymentId);
     }
@@ -274,7 +250,6 @@ public class RefundService {
      */
     @Transactional
     public void updateRefundResult(Long refundId, boolean isPgSuccess) {
-        // 결과 갱신
         Refund refund = refundRepository.findById(refundId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFUND_NOT_FOUND));
 

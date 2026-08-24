@@ -89,6 +89,12 @@ public class Payment extends BaseTimeEntity {
         changeStatus(PaymentStatus.CANCELLED);
     }
     
+    public void validateRefundable() {
+        if (this.status != PaymentStatus.COMPLETED && this.status != PaymentStatus.PARTIAL_REFUND) {
+            throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
+        }
+    }
+
     public void fullRefund() {
         changeStatus(PaymentStatus.FULL_REFUND);
     }
