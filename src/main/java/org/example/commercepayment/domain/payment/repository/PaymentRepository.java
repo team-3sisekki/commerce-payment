@@ -53,8 +53,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     SELECT p FROM Payment p
     JOIN FETCH p.order
     WHERE p.order.id = :orderId
-""")
-    Optional<Payment> findByOrderIdWithOrderForUpdate(
-            @Param("orderId") Long orderId
-    );
+    """)
+    Optional<Payment> findByOrderIdWithOrderForUpdate(@Param("orderId") Long orderId);
 }

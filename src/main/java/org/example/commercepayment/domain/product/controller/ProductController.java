@@ -23,7 +23,7 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<ApiResponse<ProductPageResponse>> list(
             @Valid @ModelAttribute ProductSearchRequest request,
-            @PageableDefault(size = 20, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 18, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
         ProductPageResponse response = productService.getProducts(request, pageable);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
