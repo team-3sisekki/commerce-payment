@@ -30,8 +30,7 @@ public class PaymentCommandService {
      */
     @Transactional
     public PaymentConfirmResponse approvePaymentAndOrder(Long orderId) {
-        Payment payment =
-                paymentService.findByOrderIdWithOrderForUpdate(orderId);
+        Payment payment = paymentService.findByOrderIdWithOrderForUpdate(orderId);
 
         // Confirm API와 Webhook이 동시에 처리된 경우
         // 먼저 완료한 요청이 있다면 나머지는 정상 종료
@@ -79,9 +78,6 @@ public class PaymentCommandService {
         // Payment 실패 처리
         paymentService.failPayment(payment, reason);
 
-        // 사용 포인트 복구
-        restoreUsedPoint(payment, order);
-
         // Order 취소
         order.transitTo(OrderStatus.CANCELED);
 
@@ -100,7 +96,7 @@ public class PaymentCommandService {
 
         // Payment 취소 처리
         paymentService.cancelPayment(payment);
-
+        
         // 사용 포인트 복구
         restoreUsedPoint(payment, order);
 
