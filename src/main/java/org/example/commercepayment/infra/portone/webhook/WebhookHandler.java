@@ -2,6 +2,7 @@ package org.example.commercepayment.infra.portone.webhook;
 
 import io.portone.sdk.server.webhook.Webhook;
 import io.portone.sdk.server.webhook.WebhookTransactionCancelledCancelled;
+import io.portone.sdk.server.webhook.WebhookTransactionCancelledPartialCancelled;
 import io.portone.sdk.server.webhook.WebhookTransactionPaid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,8 @@ public class WebhookHandler {
                 handlePaid(eventId, p.getData().getPaymentId());
             } else if (webhook instanceof WebhookTransactionCancelledCancelled c) {
                 handleCancel(eventId, c.getData().getPaymentId());
+            } else if (webhook instanceof WebhookTransactionCancelledPartialCancelled pc) {  
+                handlePartialCancel(eventId, pc.getData().getPaymentId());
             } else {
                 webhookEventService.markIgnored(eventId, "처리 대상 아님: " + type);
             }
@@ -47,6 +50,40 @@ public class WebhookHandler {
             log.error("[Webhook] failed eventId={}", eventId, e);
             webhookEventService.markFailed(eventId, e.getMessage());
         }
+    }
+
+    private void handlePartialCancel(
+            Long eventId,
+            String portonePaymentId
+    ) {
+        PaymentGatewayResponse pg =
+                paymentGateway.getPayment(portonePaymentId);
+
+        Payment payment =
+                paymentService.findByPortonePaymentId(portonePaymentId);
+
+        webhookEventService.attachPaymentId(
+                eventId,
+                payment.getId()
+        );
+
+        log.info(
+                "[Webhook] 부분 취소 확인. paymentId={}, cancelledAmount={}",
+                payment.getId(),
+                pg.cancelledAmount()
+        );
+
+        if (payment.getStatus() == PaymentStatus.COMPLETED) {
+            payment.partialRefund();
+        }
+
+        webhookEventService.markProcessed(eventId);
+
+        log.info(
+                "[Webhook] 부분 취소 동기화 완료. paymentId={}, cancelledAmount={}",
+                payment.getId(),
+                pg.cancelledAmount()
+        );
     }
 
     private void handlePaid(Long eventId, String portonePaymentId) {
@@ -99,4 +136,6 @@ public class WebhookHandler {
 
         webhookEventService.markProcessed(eventId);
     }
+
+    
 }
