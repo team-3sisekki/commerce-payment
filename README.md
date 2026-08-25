@@ -19,6 +19,7 @@
 | 🛒 **Cart** | 담기, 수량 수정, 삭제 | 사용자가 구매를 원하는 상품의 장바구니 목록 관리 |
 | 📦 **Order** | 주문 생성, 내역 조회, 취소 | 주문서(Checkout) 생성 및 결제 대기(Pending) 상태 관리 |
 | 💳 **Payment** | 결제 검증, 승인 및 실패 처리 | **포트원(PortOne)** 외부 PG 연동 및 결제 금액 정합성 2중 검증 |
+| 🔔 **Webhook** | 결제 상태 실시간 동기화 | 포트원 결제/환불 상태 변경 이벤트에 대한 실시간 웹훅 수신 및 비동기 처리 |
 | 💰 **Point** | 적립, 사용, 원장 기록 및 회수 | 비관적 락(Pessimistic Lock)을 통한 동시성 제어 및 포인트 거래 내역(원장) 관리 |
 | 🔄 **Refund** | 부분/전액 환불, 결제 취소 | 포인트/PG 결제액 분할 비율 환불 처리 및 PG사 취소 통신 연동 |
 
@@ -111,3 +112,13 @@
 * 🩹 refactor : 코드 리펙토링
 * 🚚 test : 테스트 코드, 리펙토링 테스트 코드 추가
 * 🔥 chore : 빌드 업무 수정, 패키지 매니저 수정
+
+---
+
+## 🚨 트러블 슈팅 (Troubleshooting)
+
+프로젝트를 진행하며 발생했던 주요 문제들과 해결 과정을 정리한 문서입니다.
+
+* 🔗 **[결제 승인과 웹훅(Webhook) 동시 수신에 따른 중복 처리 및 상태 오류 해결 (Tistory)](https://atom700.tistory.com/entry/%EA%B2%B0%EC%A0%9C-%EC%8A%B9%EC%9D%B8%EA%B3%BC-%EC%9B%B9%ED%9B%85Webhook-%EB%8F%99%EC%8B%9C-%EC%88%98%EC%8B%A0%EC%97%90-%EB%94%B0%EB%A5%B8-%EC%A4%91%EB%B3%B5-%EC%B2%98%EB%A6%AC-%EB%B0%8F-%EC%83%81%ED%83%9C-%EC%98%A4%EB%A5%98-%ED%95%B4%EA%B2%B0)**
+* 🔗 **[다시 도메인별 역할을 구분하며 리팩토링한 이야기 (Velog)](https://velog.io/@soulsin2/%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85-%EB%8B%A4%EC%8B%9C-%EB%8F%84%EB%A9%94%EC%9D%B8%EB%B3%84-%EC%97%AD%ED%95%A0%EC%9D%84-%EA%B5%AC%EB%B6%84%ED%95%98%EB%A9%B0-%EB%A6%AC%ED%8C%A9%ED%86%A0%EB%A7%81%ED%95%9C-%EC%9D%B4%EC%95%BC%EA%B8%B0)**
+* 🔗 **[부분 환불 시 적립 포인트 회수 누수 현상 (Notion)](https://www.notion.so/3c69b79e9af880e49e31fdfc74219941?source=copy_link)**
