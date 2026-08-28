@@ -118,7 +118,7 @@ public class RefundService {
         payment.validateRefundable();
 
         List<Refund> completedRefunds = existingRefunds.stream()
-                .filter(refund -> refund.getStatus() == RefundStatus.COMPLETED)
+                .filter(refund -> refund.getStatus() == RefundStatus.COMPLETED || refund.getStatus() == RefundStatus.PG_FAILED)
                 .toList();
 
         /* 환불 대상 상품의 잔여 환불 가능 수량 초과 여부 확인*/
@@ -254,7 +254,7 @@ public class RefundService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFUND_NOT_FOUND));
 
         if (!isPgSuccess) {
-            refund.changeStatus(RefundStatus.FAILED);
+            refund.changeStatus(RefundStatus.PG_FAILED);
             // 실패 시 에러 로그 기록 (재시도 및 수동 보정 대상 표식)
             log.error("[CRITICAL: 수동 보정 요망] PG사 환불 통신 실패! " +
                             "DB 상태(재고, 결제)는 환불 처리되었으나 실제 PG 환불이 누락되었습니다. " +

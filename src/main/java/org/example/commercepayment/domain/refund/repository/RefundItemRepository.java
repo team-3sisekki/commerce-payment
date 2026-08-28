@@ -16,7 +16,7 @@ public interface RefundItemRepository extends JpaRepository<RefundItem, Long> {
     @Query("SELECT new org.example.commercepayment.domain.refund.dto.RefundedQuantityDto(ri.orderItem.id, SUM(ri.refundQuantity)) " +
            "FROM RefundItem ri " +
            "WHERE ri.orderItem.id IN :orderItemIds " +
-           "AND ri.refund.status = 'COMPLETED' " +
+           "AND ri.refund.status IN ('COMPLETED', 'PG_FAILED') " +
            "GROUP BY ri.orderItem.id")
     List<RefundedQuantityDto> findRefundedQuantitiesByOrderItemIds(@Param("orderItemIds") List<Long> orderItemIds);
 }
