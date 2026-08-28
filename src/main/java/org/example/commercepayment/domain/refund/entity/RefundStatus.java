@@ -7,13 +7,13 @@ public enum RefundStatus {
     COMPLETED {
         @Override
         public void validateTransitionTo(RefundStatus newStatus) {
-            if (this == newStatus) {
-                throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
+            if (newStatus == PG_FAILED) {
+                return;
             }
             throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
         }
     },
-    FAILED {
+    PG_FAILED {
         @Override
         public void validateTransitionTo(RefundStatus newStatus) {
             // 실패 상태에서는 어떤 상태로든 변경 불가능
